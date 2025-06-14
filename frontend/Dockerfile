@@ -2,11 +2,19 @@ FROM node:18-slim
 
 WORKDIR /app
 
-COPY package.json yarn.lock ./
-RUN yarn install
+# Install dependencies using npm
+COPY package.json package-lock.json ./
+RUN npm install
 
+# Copy the rest of the app code
 COPY . .
-RUN yarn build
 
-# Serve static build (or use dev server for dev)
-CMD ["yarn", "preview", "--host", "0.0.0.0"]
+# Build the app using npm
+# RUN npm run build
+
+# Serve the production build
+# RUN npm install -g serve
+# CMD ["serve", "-s", "dist", "-l", "3000"]
+
+# Run the Vite dev server (with hot reload)
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
