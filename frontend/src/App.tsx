@@ -1,12 +1,20 @@
-import { Button } from "@/components/ui/button"
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import HomePage from "@/pages/HomePage";
+import LoginPage from "@/pages/LoginPage";
+import StacksPage from "@/pages/StacksPage";
+import FocusPage from "@/pages/FocusPage";
 
 function App() {
     return (
-        <div className="flex min-h-screen flex-col items-center justify-center bg-gray-100">
-            <h1 className="text-6xl font-bold mb-4">Learn with Nova.</h1>
-            <Button>Log in</Button>
-        </div>
-    )
+        <Router>
+            <Routes>
+                <Route path="/" element={<HomePage />} />
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/stacks" element={<StacksPage />} />
+                <Route path="/focus" element={<FocusPage />} />
+            </Routes>
+        </Router>
+    );
 }
 
-export default App
+export default App;
