@@ -8,10 +8,10 @@ import axios from "axios";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
-function Stack({name, description, id}: {name: string, description: string, id: string}) {
+function Stack({ name, description, id }: { name: string, description: string, id: string }) {
   const navigate = useNavigate();
   const handleClick = () => {
-    navigate(`/stacks/${id}`);
+    navigate(`/focus/${name}/${id}`);
   }
   return (
     <Card onClick={handleClick} className="cursor-pointer">
@@ -71,6 +71,9 @@ export default function StacksPage() {
             id={stack.id}
           />
         ))}
+        <Card onClick={()=>navigate("/create-stack")} className="cursor-pointer bg-gray-100 hover:bg-gray-200 transition-colors items-center text-3xl">
+          +
+        </Card>
       </div>
     </div>
   );

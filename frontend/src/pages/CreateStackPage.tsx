@@ -14,6 +14,8 @@ import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
+import axios from "axios"
+import { useNavigate } from "react-router-dom"
 
 const formSchema = z.object({
   title: z.string().min(2).max(50),
@@ -23,16 +25,42 @@ const formSchema = z.object({
 })
 
 export default function CreateStackPage() {
-   const form = useForm<z.infer<typeof formSchema>>({
+  const navigate = useNavigate();
+
+  const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: "",
     },
-  })
+  });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values)
-  }
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    console.log(values);
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+    console.log(token);
+    const res = await axios.post(
+      import.meta.env.VITE_BACKEND_URL + "/api/add_stack",
+      {
+        name: values.title,
+        description: values.description
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`
+        },
+      }
+    );
+    if (res.status === 200) {
+      console.log("Stack created successfully");
+      navigate("/focus/" + res.data.name + "/" + res.data.id);
+    } else {
+      console.error("Failed to create stack");
+    }
+  };
 
   return (
     <div className="flex flex-col gap-2 items-center justify-center min-h-screen">
@@ -47,7 +75,7 @@ export default function CreateStackPage() {
                 <FormItem>
                   <FormLabel>Title</FormLabel>
                   <FormControl>
-                    <Input placeholder="Biomechanics" {...field} />
+                    <Input required placeholder="Biomechanics" {...field} />
                   </FormControl>
                   <FormDescription>
                     Name your study stack!
@@ -63,7 +91,7 @@ export default function CreateStackPage() {
                 <FormItem>
                   <FormLabel>Description</FormLabel>
                   <FormControl>
-                    <Input placeholder="How we quantify and predict the mechanical properties of biological materials." {...field} />
+                    <Input required placeholder="How we quantify and predict the mechanical properties of biological materials." {...field} />
                   </FormControl>
                   <FormDescription>
                     Describe your study stack, just for you.
@@ -79,7 +107,7 @@ export default function CreateStackPage() {
                 <FormItem>
                   <FormLabel>Study goals and notes</FormLabel>
                   <FormControl>
-                    <Textarea className="resize-none" placeholder="I want to focus on..." {...field} />
+                    <Textarea disabled className="resize-none" placeholder="I want to focus on..." {...field} />
                   </FormControl>
                   <FormDescription>
                     Tell Nova what you want to learn.
@@ -95,7 +123,7 @@ export default function CreateStackPage() {
                 <FormItem>
                   <FormLabel>Attachments</FormLabel>
                   <FormControl>
-                    <Input placeholder="Syllabus" {...field} />
+                    <Input disabled placeholder="Syllabus" {...field} />
                   </FormControl>
                   <FormDescription>
                     Attach relevant resources here.
@@ -107,7 +135,7 @@ export default function CreateStackPage() {
             <Button type="submit">Submit</Button>
           </form>
         </Form>
-        </Card>
+      </Card>
     </div>
   );
 }
