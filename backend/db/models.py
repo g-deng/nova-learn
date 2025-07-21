@@ -1,52 +1,62 @@
 import uuid
-from sqlalchemy import Column, ForeignKey, Text, String, DateTime
-from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import declarative_base, relationship
 from datetime import datetime, timezone
+from typing import List
 
-Base = declarative_base()
+from sqlalchemy import String, Text, DateTime, ForeignKey
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+
+
+class Base(DeclarativeBase):
+    pass
+
 
 class User(Base):
     __tablename__ = "users"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    firebase_uid = Column(Text, nullable=False, unique=True)
-    name = Column(Text, nullable=False)
-    created_at = Column(DateTime(timezone=True), default=datetime.now(timezone.utc))
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    firebase_uid: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
+    name: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.now(timezone.utc))
 
-    study_stacks = relationship("StudyStack", back_populates="user", cascade="all, delete-orphan")
+    study_stacks: Mapped[List["StudyStack"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
 
 
 class StudyStack(Base):
     __tablename__ = "study_stacks"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
-    name = Column(String(255), nullable=False)
-    description = Column(Text)
-    user = relationship("User", back_populates="study_stacks")
-    topics = relationship("Topic", back_populates="stack", cascade="all, delete-orphan")
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text)
+
+    user: Mapped["User"] = relationship(back_populates="study_stacks")
+    topics: Mapped[List["Topic"]] = relationship(back_populates="stack", cascade="all, delete-orphan")
 
 
 class Topic(Base):
     __tablename__ = "topics"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    stack_id = Column(UUID(as_uuid=True), ForeignKey("study_stacks.id", ondelete="CASCADE"), nullable=False, index=True)
-    name = Column(String(255), nullable=False)
-    description = Column(Text)
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    stack_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("study_stacks.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text)
 
-    stack = relationship("StudyStack", back_populates="topics")
-    flashcards = relationship("Flashcard", back_populates="topic", cascade="all, delete-orphan")
-    
-    prerequisites = relationship(
-        "TopicDependency",
+    stack: Mapped["StudyStack"] = relationship(back_populates="topics")
+    flashcards: Mapped[List["Flashcard"]] = relationship(back_populates="topic", cascade="all, delete-orphan")
+
+    prerequisites: Mapped[List["TopicDependency"]] = relationship(
         foreign_keys="[TopicDependency.from_topic_id]",
         back_populates="from_topic",
         cascade="all, delete-orphan"
     )
-    dependents = relationship(
-        "TopicDependency",
+    dependents: Mapped[List["TopicDependency"]] = relationship(
         foreign_keys="[TopicDependency.to_topic_id]",
         back_populates="to_topic",
         cascade="all, delete-orphan"
@@ -56,20 +66,30 @@ class Topic(Base):
 class Flashcard(Base):
     __tablename__ = "flashcards"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    topic_id = Column(UUID(as_uuid=True), ForeignKey("topics.id", ondelete="CASCADE"), nullable=False, index=True)
-    front = Column(Text, nullable=False)
-    back = Column(Text, nullable=False)
-    explanation = Column(Text)
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    topic_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("topics.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    front: Mapped[str] = mapped_column(Text, nullable=False)
+    back: Mapped[str] = mapped_column(Text, nullable=False)
+    explanation: Mapped[str | None] = mapped_column(Text)
 
-    topic = relationship("Topic", back_populates="flashcards")
+    topic: Mapped["Topic"] = relationship(back_populates="flashcards")
 
 
 class TopicDependency(Base):
     __tablename__ = "topic_dependencies"
 
-    from_topic_id = Column("from", UUID(as_uuid=True), ForeignKey("topics.id", ondelete="CASCADE"), primary_key=True, index=True)
-    to_topic_id = Column("to", UUID(as_uuid=True), ForeignKey("topics.id", ondelete="CASCADE"), primary_key=True, index=True)
+    from_topic_id: Mapped[uuid.UUID] = mapped_column(
+        "from", UUID(as_uuid=True), ForeignKey("topics.id", ondelete="CASCADE"), primary_key=True, index=True
+    )
+    to_topic_id: Mapped[uuid.UUID] = mapped_column(
+        "to", UUID(as_uuid=True), ForeignKey("topics.id", ondelete="CASCADE"), primary_key=True, index=True
+    )
 
-    from_topic = relationship("Topic", foreign_keys=[from_topic_id], back_populates="prerequisites")
-    to_topic = relationship("Topic", foreign_keys=[to_topic_id], back_populates="dependents")
+    from_topic: Mapped["Topic"] = relationship(
+        foreign_keys=[from_topic_id], back_populates="prerequisites"
+    )
+    to_topic: Mapped["Topic"] = relationship(
+        foreign_keys=[to_topic_id], back_populates="dependents"
+    )
