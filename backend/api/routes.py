@@ -20,7 +20,7 @@ def get_flashcards():
 
 @router.get("/stacks", response_model=List[StudyStackSchema])
 async def get_stacks(user = Depends(get_current_user), db: Session = Depends(get_db)):
-    return crud.get_stacks_by_user_id(db, user["id"])
+    return crud.get_stacks_by_user_id(db, user.id)
 
 @router.post("/add_stack", response_model=StudyStackSchema)
 async def add_stack(name: str, description: str, user = Depends(get_current_user), db: Session = Depends(get_db)):
