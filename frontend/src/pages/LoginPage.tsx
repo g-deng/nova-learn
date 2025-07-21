@@ -35,7 +35,10 @@ export function LoginForm({
   const handleEmailLogin = async () => {
     try {
       const userCred = await loginWithEmail(email, password);
-      console.log("Email login success:", userCred.user);
+      const user = userCred.user;
+      const token = await user.getIdToken();
+      localStorage.setItem("authToken", token);
+      console.log("Login success:", user);
       navigate("/stacks");
     } catch (err) {
       console.error(err);
@@ -45,7 +48,10 @@ export function LoginForm({
   const handleGoogleLogin = async () => {
     try {
       const userCred = await loginWithGoogle();
-      console.log("Google login success:", userCred.user);
+      const user = userCred.user;
+      const token = await user.getIdToken();
+      localStorage.setItem("authToken", token);
+      console.log("Login success:", user);
       navigate("/stacks");
     } catch (err) {
       console.error(err);
@@ -123,6 +129,9 @@ export function SignupForm({
       console.log("Email registration success:", userCred.user);
       console.log(`${confirmPassword} ${name}`); // TODO: remove this line
       // TODO: handle user profile creation
+      const user = userCred.user;
+      const token = await user.getIdToken();
+      localStorage.setItem("authToken", token);
       navigate("/stacks");
     } catch (err) {
       console.error(err);
@@ -134,6 +143,9 @@ export function SignupForm({
       const userCred = await loginWithGoogle();
       console.log("Google signup success:", userCred.user);
       // TODO: handle user profile creation
+      const user = userCred.user;
+      const token = await user.getIdToken();
+      localStorage.setItem("authToken", token);
       navigate("/stacks");
     } catch (err) {
       console.error(err);

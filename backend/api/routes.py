@@ -1,6 +1,16 @@
+import uuid
+from typing import List
 from fastapi import APIRouter
-from auth import get_current_user
-from db import crud, schemas
+from api.auth import get_current_user
+from db import crud
+from db.database import get_db
+from db.schemas import (
+    FlashcardSchema,
+    StudyStackSchema,
+    TopicSchema
+)
+from fastapi import Depends, HTTPException
+from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/api")
 

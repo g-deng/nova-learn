@@ -12,7 +12,7 @@ function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/stacks" element={<StacksPage />} />
-        <Route path="/focus" element={<FocusPage />} />
+        <Route path="/focus/:stackId" element={<FocusPage />} />
         <Route path="/create-stack" element={<CreateStackPage />} />
       </Routes>
     </Router>

@@ -3,7 +3,7 @@ import firebase_admin
 from firebase_admin import auth, credentials
 from db import crud
 
-cred = credentials.Certificate("./serviceAccountKey.json")
+cred = credentials.Certificate("serviceAccountKey.json")
 firebase_admin.initialize_app(cred)
 
 async def get_current_user(request: Request):

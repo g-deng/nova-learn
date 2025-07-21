@@ -10,8 +10,10 @@ import {
   TabsTrigger
 } from "@/components/ui/tabs"
 import GraphViewer from "@/components/graph-viewer";
+import { useParams } from "react-router-dom";
 
 export default function FocusPage() {
+  const { stackId } = useParams<{ stackId: string }>();
   return (
     <ResizablePanelGroup direction="horizontal" className="min-h-screen">
       <ResizablePanel>
