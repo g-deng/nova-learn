@@ -24,7 +24,6 @@ async def get_current_user(request: Request, db: Session = Depends(get_db)):
         print("user found:", user)
         if not user:
             user = crud.create_user(db, uid, decoded_token.get("name", ""))
-        print("user???")
         return user
     except Exception:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")

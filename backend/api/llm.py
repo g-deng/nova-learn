@@ -6,7 +6,7 @@ from typing import List
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 model = "openai/gpt-3.5-turbo"
 
-async def extract_topics(subject: str, description: str):
+async def extract_topics(subject: str, description: str | None):
     prompt = (
         f"Subject: {subject}\n"
         f"Description: {description}\n\n"
@@ -76,7 +76,7 @@ async def infer_topic_dependencies(topics: List[str]) -> List[List[str]]:
     content = response.json()["choices"][0]["message"]["content"]
 
     try:
-        edges = json.loads(content)
+        edges = json.loads(content.replace("'", '"'))
         if isinstance(edges, list) and all(isinstance(pair, list) and len(pair) == 2 for pair in edges):
             return edges
         else:

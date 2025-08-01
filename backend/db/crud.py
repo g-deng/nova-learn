@@ -19,6 +19,12 @@ def create_user(db: Session, firebase_uid: str, name: str):
 def get_stacks_by_user_id(db: Session, user_id: uuid.UUID):
     return db.query(StudyStack).filter(StudyStack.user_id == user_id).all()
 
+def get_stack_by_id(db: Session, stack_id: uuid.UUID, user_id: uuid.UUID):
+    stack = db.query(StudyStack).filter(StudyStack.id == stack_id, StudyStack.user_id == user_id).first()
+    if not stack:
+        raise ValueError("Stack not found or does not belong to user")
+    return stack
+
 def create_stack(db: Session, user_id: uuid.UUID, name: str, description: str):
     stack = StudyStack(user_id=user_id, name=name, description=description)
     db.add(stack)
@@ -105,6 +111,25 @@ def add_topic_dependency(db: Session, from_topic_id: uuid.UUID, to_topic_id: uui
     
     if from_topic and to_topic:
         topic_dependency = TopicDependency(from_topic_id=from_topic_id, to_topic_id=to_topic_id)
+        db.add(topic_dependency)
+        db.commit()
+        return True
+    else:
+        return False
+    
+
+def add_topic_dependency_by_name(db: Session, from_topic_name: str, to_topic_name: str, user_id: uuid.UUID):
+    from_topic = db.query(Topic).filter(Topic.name == from_topic_name).first()
+    to_topic = db.query(Topic).filter(Topic.name == to_topic_name).first()
+
+    if not from_topic or not to_topic:
+        raise ValueError("Topic not found or does not belong to user")
+    
+    if from_topic.stack.user_id != user_id or to_topic.stack.user_id != user_id:
+        raise ValueError("One or more topics do not belong to user")
+    
+    if from_topic and to_topic:
+        topic_dependency = TopicDependency(from_topic_id=from_topic.id, to_topic_id=to_topic.id)
         db.add(topic_dependency)
         db.commit()
         return True
