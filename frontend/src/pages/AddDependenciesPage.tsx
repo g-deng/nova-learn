@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import axios from 'axios';
 import { Button } from '@/components/ui/button';
 
@@ -7,42 +7,37 @@ export default function AddDependenciesPage() {
   const navigate = useNavigate();
   const { stackId } = useParams<{ stackId: string }>();
   const [dependencies, setDependencies] = useState<{ from: string, to: string }[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
+  const generateDependencies = async () => {
     const token = localStorage.getItem("authToken");
     if (!token) {
       navigate("/login");
       return;
     }
-
-    const generateDependencies = async () => {
-      setLoading(true);
-      try {
-        const res = await axios.post(
-          `${import.meta.env.VITE_BACKEND_URL}/api/stacks/${stackId}/infer_dependencies`,
-          null,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        setDependencies(res.data);
-      } catch (error) {
-        console.error("Failed to generate dependencies:", error);
-        if (axios.isAxiosError(error)) {
-          if (error.response?.status === 401) {
-            navigate("/login");
-          }
+    setLoading(true);
+    try {
+      const res = await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/stacks/${stackId}/infer_dependencies`,
+        null,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
-      } finally {
-        setLoading(false);
+      );
+      setDependencies(res.data);
+    } catch (error) {
+      console.error("Failed to generate dependencies:", error);
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 401) {
+          navigate("/login");
+        }
       }
-    };
-
-    generateDependencies();
-  }, [navigate]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const submitDependencies = async () => {
     const token = localStorage.getItem("authToken");
@@ -77,6 +72,7 @@ export default function AddDependenciesPage() {
 
   return (
     <div>
+      <Button onClick={generateDependencies} disabled={loading}>Generate Dependencies</Button>
       {loading ? "loading" : JSON.stringify(dependencies)}
       <Button onClick={submitDependencies}>Submit Dependencies</Button>
     </div>

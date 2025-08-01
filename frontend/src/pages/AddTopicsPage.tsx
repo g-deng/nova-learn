@@ -19,7 +19,7 @@ function TopicLine({ name, description, deleteTopic, editName, editDescription }
 export default function AddTopicsPage() {
   const { stackId } = useParams<{ stackId: string }>();
   const [topics, setTopics] = useState<{ name: string; description: string }[] | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -90,7 +90,7 @@ export default function AddTopicsPage() {
     navigate(`/create-stack/${stackId}/dependencies`);
   }
 
-  useEffect(() => {
+  const generateTopics = async () => {
     const token = localStorage.getItem("authToken");
     if (!token) {
       navigate("/login");
@@ -101,47 +101,45 @@ export default function AddTopicsPage() {
       return;
     }
 
-    const generateTopics = async () => {
-      setLoading(true);
-      try {
-        const res = await axios.post(
-          `${import.meta.env.VITE_BACKEND_URL}/api/stacks/${stackId}/generate_topics`,
-          null,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        var topicList = [];
-        for (const topic in res.data) {
-          topicList.push({
-            name: topic,
-            description: res.data[topic] || ''
-          });
+    
+    setLoading(true);
+    try {
+      const res = await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/stacks/${stackId}/generate_topics`,
+        null,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
-        console.log("Parsed topic list:", topicList);
-        setTopics(topicList);
-      } catch (error) {
-        console.error("Failed to generate topics:", error);
-        if (axios.isAxiosError(error)) {
-          if (error.response?.status === 401) {
-            navigate("/login");
-          }
-        }
-      } finally {
-        setLoading(false);
+      );
+      var topicList = [];
+      for (const topic in res.data) {
+        topicList.push({
+          name: topic,
+          description: res.data[topic] || ''
+        });
       }
-    };
-
-    generateTopics();
-  }, [navigate]);
+      console.log("Parsed topic list:", topicList);
+      setTopics(topicList);
+    } catch (error) {
+      console.error("Failed to generate topics:", error);
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 401) {
+          navigate("/login");
+        }
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div>
       <header>
         <h1 className="text-xl font-bold">Edit Topics</h1>
       </header>
+      <Button onClick={generateTopics} disabled={loading}>Generate Topics</Button>
       <div className="flex flex-col gap-4 pb-4">
         {loading ?
           Array.from({ length: 3 }).map((_, i) => (

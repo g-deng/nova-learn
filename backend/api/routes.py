@@ -81,8 +81,11 @@ async def submit_dependencies(body: SubmitDependenciesRequest, user = Depends(ge
             raise HTTPException(status_code=400, detail="Each dependency must be a pair of topics")
     
     for dep in body.dependencies:
-        if not crud.add_topic_dependency_by_name(db, dep[0], dep[1], user.id):
-            raise HTTPException(status_code=404, detail="One or more topics not found or do not belong to user")
+        try:
+            if not crud.add_topic_dependency_by_name(db, dep[0], dep[1], user.id):
+                raise HTTPException(status_code=404, detail="One or more topics not found or do not belong to user")
+        except Exception as e:
+            print(f"Error adding dependency {dep}: {e}")
     
     return
 
