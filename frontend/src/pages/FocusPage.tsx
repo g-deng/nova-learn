@@ -14,13 +14,12 @@ import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
 
 export default function FocusPage() {
-  const { stackName, stackId } = useParams<{ stackName: string, stackId: string }>();
+  const { stackId } = useParams<{ stackId: string }>();
   const navigate = useNavigate();
 
-  console.log("FocusPage stackName:", stackName);
   console.log("FocusPage stackId:", stackId);
 
-  if (!stackName || !stackId) {
+  if (!stackId) {
     return <div className="text-red-500">Invalid stack parameters</div>;
   }
 
@@ -50,7 +49,7 @@ export default function FocusPage() {
   return (
     <div>
       <header>
-        <h1 className="text-xl font-bold">{stackName}</h1>
+        <h1 className="text-xl font-bold">"Placeholder"</h1>
       </header>
       <ResizablePanelGroup direction="horizontal" className="min-h-screen">
         <ResizablePanel>

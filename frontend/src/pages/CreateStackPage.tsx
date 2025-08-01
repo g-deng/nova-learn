@@ -56,7 +56,11 @@ export default function CreateStackPage() {
     );
     if (res.status === 200) {
       console.log("Stack created successfully");
-      navigate("/focus/" + res.data.name + "/" + res.data.id);
+      navigate(`/create-stack/${res.data.id}/add-topics`, 
+        {
+          state: { description: values.description }
+        }
+      );
     } else {
       console.error("Failed to create stack");
     }
