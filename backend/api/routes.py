@@ -9,9 +9,25 @@ from db.schemas import (
     StudyStackSchema,
     TopicSchema
 )
+from api.llm import extract_topics, infer_topic_dependencies
 from fastapi import Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
+
+class GenerateTopicsRequest(BaseModel):
+    subject: str
+    description: str
+
+class SubmitTopicListRequest(BaseModel):
+    topics: dict[str, str] # {name: description}
+
+class SubmitTopicListResponse(BaseModel):
+    topics: dict[str, uuid.UUID]  # {name: uuid}
+    dependencies: List[List[str]]
+
+class SubmitDependenciesRequest(BaseModel):
+    topics: dict[str, uuid.UUID]  # {name: uuid}
+    dependencies: List[List[str]]
 
 class CreateStackRequest(BaseModel):
     name: str
@@ -27,12 +43,51 @@ def get_flashcards():
 async def get_stacks(user = Depends(get_current_user), db: Session = Depends(get_db)):
     return crud.get_stacks_by_user_id(db, user.id)
 
+@router.post("/stacks/{stack_id}/generate_topics", response_model=dict[str, str])
+async def generate_topics(body: GenerateTopicsRequest, user = Depends(get_current_user)):
+    if not body.subject or not body.description:
+        raise HTTPException(status_code=400, detail="Subject and description are required")
+    
+    topics = await extract_topics(body.subject, body.description)
+    if "topics" in topics:
+        return topics
+    else:
+        raise HTTPException(status_code=500, detail="Failed to extract topics")
+    
+@router.post("/stacks/{stack_id}/submit_topic_list", response_model=SubmitTopicListResponse)
+async def submit_topic_list(stack_id: uuid.UUID, body: SubmitTopicListRequest, user = Depends(get_current_user), db: Session = Depends(get_db)):
+    if "topics" in body.topics:
+        raise HTTPException(status_code=400, detail="Topic list cannot be empty")
+    
+    topic_ids = {}
+    for name, description in body.topics:
+        created_topic = crud.create_topic(db, stack_id, name, description, user.id)
+        topic_ids[name] = created_topic.id
+
+    dependencies = await infer_topic_dependencies(list(topic_ids.keys()))
+
+    if dependencies:
+        return {"dependencies": dependencies, "topics": topic_ids}
+    else:
+        raise HTTPException(status_code=500, detail="Failed to infer topic dependencies")
+
+@router.post("/stacks/{stack_id}/submit_dependencies")
+async def submit_dependencies(stack_id: uuid.UUID, body: SubmitDependenciesRequest, user = Depends(get_current_user), db: Session = Depends(get_db)):
+    if not body.dependencies:
+        raise HTTPException(status_code=400, detail="Dependencies cannot be empty")
+    
+    for dep in body.dependencies:
+        if len(dep) != 2:
+            raise HTTPException(status_code=400, detail="Each dependency must be a pair of topics")
+    
+    for dep in body.dependencies:
+        if not crud.add_topic_dependency(db, body.topics[dep[0]], body.topics[dep[1]], user.id):
+            raise HTTPException(status_code=404, detail="One or more topics not found or do not belong to user")
+    
+    return
+
 @router.post("/add_stack", response_model=StudyStackSchema)
 async def add_stack(stack_data: CreateStackRequest, user = Depends(get_current_user), db: Session = Depends(get_db)):
-    print("hi")
-    print(stack_data.name)
-    print(stack_data.description)
-    print(user.id)
     if not stack_data.name:
         raise HTTPException(status_code=400, detail="Stack name is required")
     stack = crud.create_stack(db, user.id, stack_data.name, stack_data.description)
