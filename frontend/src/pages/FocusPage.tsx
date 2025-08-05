@@ -10,11 +10,15 @@ import {
   TabsTrigger
 } from "@/components/ui/tabs"
 import GraphViewer from "@/components/graph-viewer";
+import type { Node, Link } from "@/components/graph-viewer";
 import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
+import { useEffect, useState } from "react";
 
 export default function FocusPage() {
   const { stackId } = useParams<{ stackId: string }>();
+  const [topics, setTopics] = useState<Node[]>([]);
+  const [dependencies, setDependencies] = useState<Link[]>([]);
   const navigate = useNavigate();
 
   console.log("FocusPage stackId:", stackId);
@@ -29,22 +33,62 @@ export default function FocusPage() {
     return;
   }
 
-  const fetchFocusData = async () => {
+  const fetchTopicData = async () => {
     try {
-      const res = await axios.get(
-        import.meta.env.VITE_BACKEND_URL + "/api/stacks",
+      const topicsResult = await axios.get(
+        `${import.meta.env.VITE_BACKEND_URL}/api/stacks/${stackId}/topics`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         }
       );
-      console.log("stackList:", res.data);
+      console.log("topics:", topicsResult.data);
+      const parsedTopics = topicsResult.data.map((t: any) => {
+        return { id: t.id, name: t.name } as Node;
+      });
+      setTopics(parsedTopics);
+      console.log("topics state set:", topics);
     } catch (error) {
-      console.error("Failed to fetch stacks:", error);
+      console.error("Failed to fetch topics:", error);
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 401) {
+          navigate("/login");
+        }
+      }
     }
   }
 
+  const fetchDependencyData = async () => {
+    try {
+      const dependencyResult = await axios.get(
+        `${import.meta.env.VITE_BACKEND_URL}/api/stacks/${stackId}/dependencies`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      console.log("dependencies:", dependencyResult.data);
+      const parsedDeps = dependencyResult.data.map((d: any) => {
+        return { source: d.from_topic_id, target: d.to_topic_id } as Link;
+      });
+      setDependencies(parsedDeps);
+      console.log("dependencies state set:", dependencies);
+    } catch (error) {
+      console.error("Failed to fetch dependencies:", error);
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 401) {
+          navigate("/login");
+        }
+      }
+    }
+  }
+
+  useEffect(() => {
+    fetchTopicData();
+    fetchDependencyData();
+  }, [navigate, stackId, token])
 
   return (
     <div>
@@ -68,7 +112,7 @@ export default function FocusPage() {
         </ResizablePanel>
         <ResizableHandle withHandle />
         <ResizablePanel>
-          <GraphViewer />
+          <GraphViewer nodes={topics} links={dependencies}/>
         </ResizablePanel>
       </ResizablePanelGroup>
     </div>

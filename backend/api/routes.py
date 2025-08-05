@@ -7,7 +7,8 @@ from db.database import get_db
 from db.schemas import (
     FlashcardSchema,
     StudyStackSchema,
-    TopicSchema
+    TopicSchema,
+    TopicDependencySchema
 )
 from api.llm import extract_topics, infer_topic_dependencies
 from fastapi import Depends, HTTPException
@@ -102,6 +103,13 @@ async def get_topics(stack_id: uuid.UUID, user = Depends(get_current_user), db: 
     if topics:
         return topics
     raise HTTPException(status_code=404, detail="Stack not found")
+
+@router.get("/stacks/{stack_id}/dependencies", response_model=List[TopicDependencySchema])
+async def get_dependencies(stack_id: uuid.UUID, user = Depends(get_current_user), db: Session = Depends(get_db)):
+    dependencies = crud.get_topic_dependencies_by_stack_id(db, stack_id, user.id)
+    if dependencies:
+        return dependencies
+    raise HTTPException(status_code=404, detail="No dependencies found for this stack")
 
 @router.post("/stacks/{stack_id}/add_topic", response_model=TopicSchema)
 async def add_topic(stack_id: uuid.UUID, name: str, description: str, user = Depends(get_current_user), db: Session = Depends(get_db)):

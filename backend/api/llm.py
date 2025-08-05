@@ -4,7 +4,7 @@ import json
 from typing import List
 
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
-model = "openai/gpt-3.5-turbo"
+model = "google/gemini-2.0-flash-exp:free" # "openai/gpt-3.5-turbo"
 
 async def extract_topics(subject: str, description: str | None):
     prompt = (

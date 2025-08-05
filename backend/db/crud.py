@@ -87,6 +87,16 @@ def add_flashcard_explanation(db: Session, id: uuid.UUID, explanation: str, user
         return flashcard
     else:
         raise ValueError("Flashcard not found or does not belong to user")
+    
+
+def get_topic_dependencies_by_stack_id(db: Session, stack_id: uuid.UUID, user_id: uuid.UUID):
+    stack = db.query(StudyStack).filter(StudyStack.id == stack_id, StudyStack.user_id == user_id).first()
+    if not stack:
+        raise ValueError("Stack not found or does not belong to user")
+    return db.query(TopicDependency).filter(
+        (TopicDependency.from_topic.has(stack_id=stack_id)) | 
+        (TopicDependency.to_topic.has(stack_id=stack_id))
+    ).all()
 
 def get_prerequisite_topic_ids(db: Session, topic_id: uuid.UUID, user_id: uuid.UUID):
     topic = db.query(Topic).filter(Topic.id == topic_id, Topic.stack.user_id == user_id).first()
