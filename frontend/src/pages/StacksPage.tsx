@@ -50,6 +50,11 @@ export default function StacksPage() {
         setStacks(res.data);
       } catch (error) {
         console.error("Failed to fetch stacks:", error);
+        if (axios.isAxiosError(error)) {
+          if (error.response?.status === 401) {
+            navigate("/login");
+          }
+        }
       }
     };
 

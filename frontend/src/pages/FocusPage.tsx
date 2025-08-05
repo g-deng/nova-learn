@@ -21,8 +21,6 @@ export default function FocusPage() {
   const [dependencies, setDependencies] = useState<Link[]>([]);
   const navigate = useNavigate();
 
-  console.log("FocusPage stackId:", stackId);
-
   if (!stackId) {
     return <div className="text-red-500">Invalid stack parameters</div>;
   }

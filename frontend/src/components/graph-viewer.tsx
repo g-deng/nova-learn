@@ -1,7 +1,7 @@
 import ForceGraph2D from 'react-force-graph-2d';
 import { useRef, useEffect, useState } from 'react';
 import type { ForceGraphMethods } from 'react-force-graph-2d';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 export type Node = {
   id: string;
@@ -26,12 +26,11 @@ export default function GraphViewer({ nodes, links }: Props) {
   const containerRef = useRef<HTMLDivElement>(null!);
   const fgRef = useRef<ForceGraphMethods<any, any>>(null!);;
   const navigate = useNavigate();
+  const location = useLocation();
 
   const onNodeClick = (node: Node) => {
-    console.log("Node clicked:", node);
     navigate("#" + node.id);
   }
-
 
   useEffect(() => {
     const updateSize = () => {
@@ -57,10 +56,32 @@ export default function GraphViewer({ nodes, links }: Props) {
         ref={fgRef}
         width={dimensions.width}
         height={dimensions.height}
+        d3VelocityDecay={0.6}
         graphData={{ nodes, links }}
         nodeLabel="name"
-        nodeAutoColorBy="name"
-        nodeColor="green"
+        nodeCanvasObject={(node, ctx, globalScale) => {
+          const label = node.name as string;
+          const radius = 10 / globalScale;
+          const labelPadding = 16 / globalScale;
+          const fontSize = 18 / globalScale;
+
+          ctx.beginPath();
+          ctx.arc(node.x!, node.y!, radius, 0, 2 * Math.PI, false);
+          ctx.fillStyle = (location.hash.substring(1) == node.id) ? 'lightblue' : 'lightgray';
+          ctx.fill();
+
+          ctx.font = `${fontSize}px Sans-Serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillStyle = 'black';
+          ctx.fillText(label, node.x!, node.y! + radius + labelPadding);
+        }}
+        nodePointerAreaPaint={(node, color, ctx) => {
+          ctx.fillStyle = color;
+          ctx.beginPath();
+          ctx.arc(node.x!, node.y!, 8, 0, 2 * Math.PI, false);
+          ctx.fill();
+        }}
         onNodeClick={onNodeClick}
         enableNodeDrag={true}
       />
