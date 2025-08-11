@@ -63,7 +63,7 @@ export default function GraphViewer({ nodes, links }: Props) {
           const label = node.name as string;
           const radius = 10 / globalScale;
           const labelPadding = 16 / globalScale;
-          const fontSize = 18 / globalScale;
+          const fontSize = 16 / globalScale;
 
           ctx.beginPath();
           ctx.arc(node.x!, node.y!, radius, 0, 2 * Math.PI, false);

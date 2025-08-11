@@ -56,7 +56,7 @@ export default function CreateStackPage() {
     );
     if (res.status === 200) {
       console.log("Stack created successfully");
-      navigate(`/create-stack/${res.data.id}/add-topics`, 
+      navigate(`/create-stack/${res.data.id}/topics`, 
         {
           state: { description: values.description }
         }

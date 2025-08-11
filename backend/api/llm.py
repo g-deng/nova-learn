@@ -4,7 +4,7 @@ import json
 from typing import List
 
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
-model = "google/gemini-2.0-flash-exp:free" # "openai/gpt-3.5-turbo"
+model = "openai/gpt-oss-20b:free" # "google/gemini-2.0-flash-exp:free" # "openai/gpt-3.5-turbo"
 
 async def extract_topics(subject: str, description: str | None):
     prompt = (
@@ -36,7 +36,7 @@ async def extract_topics(subject: str, description: str | None):
         )
 
     try:
-        content = response.json()["choices"][0]["message"]["content"]
+        content = response.json()["choices"][0]["message"]["content"].strip()
         topics_with_descriptions = json.loads(content)
         return {"topics": topics_with_descriptions}
     except Exception as e:

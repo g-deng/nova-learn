@@ -47,6 +47,8 @@ async def generate_topics(stack_id: uuid.UUID, user = Depends(get_current_user),
         raise HTTPException(status_code=404, detail="Stack not found or does not belong to user")
     
     topics = await extract_topics(stack_info.name, stack_info.description)
+    print("Topics")
+    print(topics)
     if "topics" in topics:
         return topics["topics"]
     else:
@@ -97,8 +99,16 @@ async def add_stack(stack_data: CreateStackRequest, user = Depends(get_current_u
     stack = crud.create_stack(db, user.id, stack_data.name, stack_data.description)
     return stack
 
+@router.get("/stacks/{stack_id}", response_model=StudyStackSchema)
+async def get_stack(stack_id: uuid.UUID, user = Depends(get_current_user), db: Session = Depends(get_db)):
+    stack = crud.get_stack_by_id(db, stack_id, user.id)
+    if stack:
+        return stack
+    raise HTTPException(status_code=404, detail="Stack not found or does not belong to user")
+
 @router.get("/stacks/{stack_id}/topics", response_model=List[TopicSchema])
 async def get_topics(stack_id: uuid.UUID, user = Depends(get_current_user), db: Session = Depends(get_db)):
+    print("Fetching topics")
     topics = crud.get_topics_by_stack_id(db, stack_id, user.id)
     if topics:
         return topics
@@ -106,6 +116,7 @@ async def get_topics(stack_id: uuid.UUID, user = Depends(get_current_user), db: 
 
 @router.get("/stacks/{stack_id}/dependencies", response_model=List[TopicDependencySchema])
 async def get_dependencies(stack_id: uuid.UUID, user = Depends(get_current_user), db: Session = Depends(get_db)):
+    print("Fetching dependencies")
     dependencies = crud.get_topic_dependencies_by_stack_id(db, stack_id, user.id)
     if dependencies:
         return dependencies
