@@ -12,6 +12,9 @@ export default function AddTopicsPage() {
   const [topics, setTopics] = useState<{ name: string; description: string; id: string | null }[]>([]);
   const [loading, setLoading] = useState(false);
   const [deletedTopics, setDeletedTopics] = useState<string[]>([]); // ids
+  const [repeatedNames, setRepeatedNames] = useState<string[]>([]); // repeated names
+  const [saved, setSaved] = useState<{ name: string; description: string; id: string | null }[]>([]);
+  const [unsavedChanges, setUnsavedChanges] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -36,6 +39,7 @@ export default function AddTopicsPage() {
           return { name: t.name, description: t.description || '', id: t.id };
         });
         setTopics(parsedTopics);
+        setSaved(parsedTopics);
       } catch (error) {
         console.error("Failed to fetch topics:", error);
         if (axios.isAxiosError(error)) {
@@ -51,13 +55,33 @@ export default function AddTopicsPage() {
     loadExisting();
   }, []);
 
+  useEffect(() => {
+    const names = new Set<string>();
+    const repeated = [];
+    for (const topic of topics) {
+      if (names.has(topic.name)) {
+        repeated.push(topic.name);
+      } else {
+        names.add(topic.name);
+      }
+    }
+    setRepeatedNames(repeated);
+  }, [topics]);
+
+  useEffect(() => {
+    setUnsavedChanges(
+      JSON.stringify(topics) !== JSON.stringify(saved) ||
+      deletedTopics.length > 0
+    );
+  }, [topics, saved])
+
   const hasEmptyFields = topics?.some(
     (t) => !t.name || !t.description || t.name.trim() === "" || t.description.trim() === ""
   );
 
   const deleteTopic = (index: number) => {
     if (topics[index]?.id) {
-      if (window.confirm("Are you sure you want to delete this topic? This action cannot be undone. Associated flashcards and other data will be lost.")) {
+      if (window.confirm("Are you sure you want to delete this topic? This action cannot be undone if you save it. Associated flashcards and other data will be lost.")) {
         setDeletedTopics([...deletedTopics, topics[index].id]);
       } else {
         return;
@@ -84,6 +108,10 @@ export default function AddTopicsPage() {
   const submitTopics = () => {
     if (hasEmptyFields) {
       alert("Please fill in all fields before submitting.");
+      return;
+    }
+    if (repeatedNames.length > 0) {
+      alert("Cannot have multiple topics with the same name: " + repeatedNames.join(", "));
       return;
     }
     const token = localStorage.getItem("authToken");
@@ -118,9 +146,10 @@ export default function AddTopicsPage() {
             },
           }
         );
-
         if (saveResult.status === 200) {
-          navigate(`/create-stack/${stackId}/dependencies`);
+          setSaved(topics);
+          setDeletedTopics([]);
+          // navigate(`/create-stack/${stackId}/dependencies`);
         }
       } catch (error) {
         console.error("Failed to save topics:", error);
@@ -179,10 +208,9 @@ export default function AddTopicsPage() {
       <header>
         <h1 className="text-xl font-bold">Edit Topics</h1>
       </header>
-      <Button onClick={generateTopics} disabled={loading}>Generate Topics</Button>
       <div className="flex flex-col gap-4 pb-4">
         {topics && topics.map((topic, index) => (
-          <TopicLine key={topic.name + index} topic={topic} index={index} editTopicName={editTopicName} editTopicDescription={editTopicDescription} deleteTopic={deleteTopic} />
+          <TopicLine key={topic.name + index} topic={topic} index={index} repeatedNames={repeatedNames} editTopicName={editTopicName} editTopicDescription={editTopicDescription} deleteTopic={deleteTopic} />
         ))}
         {loading &&
           Array.from({ length: 3 }).map((_, i) => (
@@ -195,14 +223,18 @@ export default function AddTopicsPage() {
         }
         <Button onClick={newTopic} variant="outline" disabled={(topics && topics.length > 0 && topics[topics.length - 1].name === '') || undefined}>New Topic</Button>
       </div>
-      <Button onClick={submitTopics} disabled={loading}>Submit Topics</Button>
+      <div className="flex items-center gap-4 pb-4">
+        <Button onClick={generateTopics} disabled={loading || unsavedChanges}>Generate Topics</Button>
+        <Button onClick={submitTopics} disabled={loading || !unsavedChanges}>Save Changes</Button>
+      </div>
     </div>
   )
 }
 
-export function TopicLine({ topic, index, editTopicName, editTopicDescription, deleteTopic }: {
+export function TopicLine({ topic, index, repeatedNames, editTopicName, editTopicDescription, deleteTopic }: {
   topic: { name: string; description: string; id: string | null };
   index: number;
+  repeatedNames: string[];
   editTopicName: (index: number, name: string) => void;
   editTopicDescription: (index: number, description: string) => void;
   deleteTopic: (index: number) => void;
@@ -214,26 +246,33 @@ export function TopicLine({ topic, index, editTopicName, editTopicDescription, d
         <Input
           required
           defaultValue={topic.name}
-          onChange={(e) => { editTopicName(index, e.target.value) }}
           className={"w-[200px] " + (topic.id ? "bg-gray-200" : "")}
           onFocus={() => { setTouched(touched + 1); console.log("focus") }}
-          onBlur={() => setTouched(touched - 1)}
+          onBlur={(e) => { editTopicName(index, e.target.value); setTouched(touched - 1) }}
 
         />
         <Textarea
           defaultValue={topic.description}
-          onChange={(e) => { editTopicDescription(index, e.target.value) }}
           className={(topic.id ? "bg-gray-200" : "")}
           onFocus={() => setTouched(touched + 1)}
-          onBlur={() => setTouched(touched - 1)}
+          onBlur={(e) => { editTopicDescription(index, e.target.value); setTouched(touched - 1)}}
         />
         <Button onClick={() => deleteTopic(index)} variant="destructive">Delete</Button>
       </div>
-      {topic.id && touched > 0 &&
-        <Alert variant="destructive">
-          <AlertTitle>
-            You are editing an existing topic
-          </AlertTitle>
-        </Alert>}
+      <div className="flex flex-col gap-2 pt-2">
+        {topic.id && touched > 0 &&
+          <Alert variant="destructive">
+            <AlertTitle>
+              You are editing an existing topic
+            </AlertTitle>
+          </Alert>}
+        {repeatedNames.includes(topic.name) &&
+          <Alert variant="destructive">
+            <AlertTitle>
+              Cannot have multiple topics with the same name
+            </AlertTitle>
+          </Alert>}
+      </div>
+
     </div>)
 }
