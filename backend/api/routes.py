@@ -17,7 +17,9 @@ from pydantic import BaseModel
 
 class SubmitTopicListRequest(BaseModel):
     stack_id: uuid.UUID
-    topics: dict[str, str] # {name: description}
+    new_topics: dict[str, str] # {name: description}
+    old_topics: dict[uuid.UUID, tuple[str, str]]  # {id: (name, description)}
+    deleted_topics: List[uuid.UUID]
 
 class SubmitTopicListResponse(BaseModel):
     topics: dict[str, uuid.UUID]  # {name: uuid}
@@ -55,12 +57,15 @@ async def generate_topics(stack_id: uuid.UUID, user = Depends(get_current_user),
         raise HTTPException(status_code=500, detail="Failed to extract topics")
     
 @router.post("/stacks/{stack_id}/submit_topic_list")
-async def submit_topic_list(body: SubmitTopicListRequest, user = Depends(get_current_user), db: Session = Depends(get_db)):
-    if "topics" in body.topics:
-        raise HTTPException(status_code=400, detail="Topic list cannot be empty")
-    
-    for name in body.topics:
-        crud.create_topic(db, body.stack_id, name, body.topics[name], user.id)
+async def submit_topic_list(stack_id: uuid.UUID, body: SubmitTopicListRequest, user = Depends(get_current_user), db: Session = Depends(get_db)):
+    for name, description in body.new_topics.items():
+        crud.create_topic(db, body.stack_id, name, description, user.id)
+
+    for topic_id, (name, description) in body.old_topics.items():
+        crud.update_topic(db, topic_id, name, description, stack_id, user.id)
+
+    for topic_id in body.deleted_topics:
+        crud.delete_topic(db, topic_id, stack_id, user.id)
 
 @router.post("/stacks/{stack_id}/infer_dependencies", response_model=List[List[str]])
 async def infer_dependencies(stack_id: uuid.UUID, user = Depends(get_current_user), db: Session = Depends(get_db)):

@@ -1,34 +1,64 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 
-function TopicLine({ name, description, deleteTopic, editName, editDescription }: { name: string, description: string, deleteTopic: () => void, editName: (name: string) => void, editDescription: (description: string) => void }) {
-  return (
-    <div className="flex items-center justify-between p-2 gap-6 border-b">
-      <Input required defaultValue={name} onChange={(e) => { editName(e.target.value) }} className="w-[200px]" />
-      <Textarea defaultValue={description} onChange={(e) => { editDescription(e.target.value) }} />
-      <Button onClick={deleteTopic} variant="destructive">Delete</Button>
-    </div>
-  );
-}
-
 export default function AddTopicsPage() {
   const { stackId } = useParams<{ stackId: string }>();
-  const [topics, setTopics] = useState<{ name: string; description: string }[] | null>(null);
+  const [topics, setTopics] = useState<{ name: string; description: string; id: string | null }[]>([]);
   const [loading, setLoading] = useState(false);
-  const location = useLocation();
+  const [deletedTopics, setDeletedTopics] = useState<string[]>([]); // ids
   const navigate = useNavigate();
 
+  useEffect(() => {
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+
+    const loadExisting = async () => {
+      setLoading(true);
+      try {
+        const topicsResult = await axios.get(
+          `${import.meta.env.VITE_BACKEND_URL}/api/stacks/${stackId}/topics`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        const parsedTopics = topicsResult.data.map((t: any) => {
+          return { name: t.name, description: t.description || '', id: t.id };
+        });
+        setTopics(parsedTopics);
+      } catch (error) {
+        console.error("Failed to fetch topics:", error);
+        if (axios.isAxiosError(error)) {
+          if (error.response?.status === 401) {
+            navigate("/login");
+          }
+        }
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadExisting();
+  }, []);
+
   const hasEmptyFields = topics?.some(
-    (t) => t.name.trim() === "" || t.description.trim() === ""
+    (t) => !t.name || !t.description || t.name.trim() === "" || t.description.trim() === ""
   );
 
   const deleteTopic = (index: number) => {
+    if (topics[index]?.id) deletedTopics.push(topics[index].id);
     setTopics(topics?.filter((_, i) => i !== index) || null);
+    console.log("Deleted topic at index:", index);
+    console.log(topics);
   }
 
   const editTopicName = (index: number, name: string) => {
@@ -41,7 +71,7 @@ export default function AddTopicsPage() {
 
   const newTopic = () => {
     if (topics && topics.length > 0 && topics[topics.length - 1].name === '') return;
-    setTopics([...topics || [], { name: '', description: '' }]);
+    setTopics([...topics || [], { name: '', description: '', id: null }]);
   }
 
   const submitTopics = () => {
@@ -61,14 +91,19 @@ export default function AddTopicsPage() {
 
     const saveTopics = async () => {
       try {
-        await axios.post(
+        const saveResult = await axios.post(
           `${import.meta.env.VITE_BACKEND_URL}/api/stacks/${stackId}/submit_topic_list`,
           {
             stack_id: stackId,
-            topics: topics.reduce((acc, topic) => {
-              acc[topic.name] = topic.description;
+            new_topics: topics.reduce((acc, topic) => {
+              if (!topic.id) acc[topic.name] = topic.description;
               return acc;
             }, {} as Record<string, string>),
+            old_topics: topics.reduce((acc, topic) => {
+              if (topic.id) acc[topic.id] = [topic.name, topic.description];
+              return acc;
+            }, {} as Record<string, [string, string]>),
+            deleted_topics: deletedTopics
           },
           {
             headers: {
@@ -76,6 +111,10 @@ export default function AddTopicsPage() {
             },
           }
         );
+
+        if (saveResult.status === 200) {
+          navigate(`/create-stack/${stackId}/dependencies`);
+        }
       } catch (error) {
         console.error("Failed to save topics:", error);
         if (axios.isAxiosError(error)) {
@@ -86,8 +125,6 @@ export default function AddTopicsPage() {
       }
     }
     saveTopics();
-
-    navigate(`/create-stack/${stackId}/dependencies`);
   }
 
   const generateTopics = async () => {
@@ -101,7 +138,6 @@ export default function AddTopicsPage() {
       return;
     }
 
-    
     setLoading(true);
     try {
       const res = await axios.post(
@@ -117,7 +153,8 @@ export default function AddTopicsPage() {
       for (const topic in res.data) {
         topicList.push({
           name: topic,
-          description: res.data[topic] || ''
+          description: res.data[topic] || '',
+          id: null
         });
       }
       console.log("Parsed topic list:", topicList);
@@ -150,18 +187,15 @@ export default function AddTopicsPage() {
             </div>
           ))
           : topics?.map((topic, index) => (
-            <TopicLine
-              key={index}
-              name={topic.name}
-              description={topic.description}
-              deleteTopic={() => deleteTopic(index)}
-              editName={(name) => editTopicName(index, name)}
-              editDescription={(desc) => editTopicDescription(index, desc)}
-            />
+            <div key={topic.name + index} className="flex items-center justify-between p-2 gap-6 border-b">
+              <Input required defaultValue={topic.name} onChange={(e) => { editTopicName(index, e.target.value) }} className="w-[200px]" />
+              <Textarea defaultValue={topic.description} onChange={(e) => { editTopicDescription(index, e.target.value) }} />
+              <Button onClick={() => deleteTopic(index)} variant="destructive">Delete</Button>
+            </div>
           ))}
         <Button onClick={newTopic} variant="outline" disabled={(topics && topics.length > 0 && topics[topics.length - 1].name === '') || undefined}>New Topic</Button>
       </div>
-      <Button onClick={submitTopics}>Submit Topics</Button>
+      <Button onClick={submitTopics} disabled={loading}>Submit Topics</Button>
     </div>
   )
 }

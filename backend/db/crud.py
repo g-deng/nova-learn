@@ -48,6 +48,30 @@ def create_topic(db: Session, stack_id: uuid.UUID, name: str, description: str, 
     db.refresh(topic)
     return topic
 
+def update_topic(db: Session, topic_id: uuid.UUID, name: str, description: str, stack_id: uuid.UUID, user_id: uuid.UUID):
+    if db.query(StudyStack).filter(StudyStack.id == stack_id, StudyStack.user_id == user_id).first() is None:
+        raise ValueError
+    topic = db.query(Topic).filter(Topic.id == topic_id, Topic.stack_id == stack_id).first()
+    if not topic:
+        raise ValueError("Topic not found or does not belong to user")
+    if name != topic.name:
+        topic.name = name
+    if description != topic.description:
+        topic.description = description
+    db.commit()
+    db.refresh(topic)
+    return topic
+
+def delete_topic(db: Session, topic_id: uuid.UUID, stack_id: uuid.UUID, user_id: uuid.UUID):
+    if db.query(StudyStack).filter(StudyStack.id == stack_id, StudyStack.user_id == user_id).first() is None:
+        raise ValueError
+    topic = db.query(Topic).filter(Topic.id == topic_id, Topic.stack_id == stack_id).first()
+    if not topic:
+        raise ValueError("Topic not found or does not belong to user")
+    db.delete(topic)
+    db.commit()
+    return True
+
 def get_flashcards_by_topic_id(db: Session, topic_id: uuid.UUID, user_id: uuid.UUID):
     topic = db.query(Topic).filter(Topic.id == topic_id, Topic.stack.user_id == user_id).first()
     if not topic:
