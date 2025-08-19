@@ -6,7 +6,7 @@ from typing import List
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 model = "openai/gpt-oss-20b:free" # "google/gemini-2.0-flash-exp:free" # "openai/gpt-3.5-turbo"
 
-async def extract_topics(subject: str, description: str | None):
+async def extract_topics(subject: str, description: str | None, avoid_topics: List[str] = []) -> dict:
     prompt = (
         f"Subject: {subject}\n"
         f"Description: {description}\n\n"
@@ -14,6 +14,7 @@ async def extract_topics(subject: str, description: str | None):
         "For each topic, return a short 1-2 sentence description explaining it. "
         "Format your output as a JSON object where keys are the topic names "
         "and values are the short descriptions. Do not include extra explanation outside the JSON object."
+        "The following topics have already been extracted: " + ", ".join(avoid_topics) + "\n\n"
     )
 
     headers = {

@@ -48,7 +48,10 @@ async def generate_topics(stack_id: uuid.UUID, user = Depends(get_current_user),
     if not stack_info:
         raise HTTPException(status_code=404, detail="Stack not found or does not belong to user")
     
-    topics = await extract_topics(stack_info.name, stack_info.description)
+    existing_topics = crud.get_topics_by_stack_id(db, stack_id, user.id)
+    avoid_topics = [t.name for t in existing_topics]
+    
+    topics = await extract_topics(stack_info.name, stack_info.description, avoid_topics)
     print("Topics")
     print(topics)
     if "topics" in topics:
@@ -115,7 +118,7 @@ async def get_stack(stack_id: uuid.UUID, user = Depends(get_current_user), db: S
 async def get_topics(stack_id: uuid.UUID, user = Depends(get_current_user), db: Session = Depends(get_db)):
     print("Fetching topics")
     topics = crud.get_topics_by_stack_id(db, stack_id, user.id)
-    if topics:
+    if crud.get_stack_by_id(db, stack_id, user.id):
         return topics
     raise HTTPException(status_code=404, detail="Stack not found")
 

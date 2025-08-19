@@ -135,16 +135,12 @@ export default function AddTopicsPage() {
   }
 
   const generateTopics = async () => {
+    console.log("Generating topics...");
     const token = localStorage.getItem("authToken");
     if (!token) {
       navigate("/login");
       return;
     }
-
-    if (topics !== null) {
-      return;
-    }
-
     setLoading(true);
     try {
       const res = await axios.post(
@@ -185,7 +181,10 @@ export default function AddTopicsPage() {
       </header>
       <Button onClick={generateTopics} disabled={loading}>Generate Topics</Button>
       <div className="flex flex-col gap-4 pb-4">
-        {loading ?
+        {topics && topics.map((topic, index) => (
+          <TopicLine key={topic.name + index} topic={topic} index={index} editTopicName={editTopicName} editTopicDescription={editTopicDescription} deleteTopic={deleteTopic} />
+        ))}
+        {loading &&
           Array.from({ length: 3 }).map((_, i) => (
             <div key={i} className="flex items-center justify-between gap-6">
               <Skeleton className="h-10 w-[200px]" />
@@ -193,9 +192,7 @@ export default function AddTopicsPage() {
               <Skeleton className="h-10 w-[100px]" />
             </div>
           ))
-          : topics?.map((topic, index) => (
-            <TopicLine key={topic.name + index} topic={topic} index={index} editTopicName={editTopicName} editTopicDescription={editTopicDescription} deleteTopic={deleteTopic} />
-          ))}
+        }
         <Button onClick={newTopic} variant="outline" disabled={(topics && topics.length > 0 && topics[topics.length - 1].name === '') || undefined}>New Topic</Button>
       </div>
       <Button onClick={submitTopics} disabled={loading}>Submit Topics</Button>
