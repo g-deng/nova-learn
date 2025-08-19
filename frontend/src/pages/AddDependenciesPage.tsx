@@ -58,7 +58,7 @@ export default function AddDependenciesPage() {
       );
       console.log("Dependencies submitted successfully:", res.data);
 
-      navigate(`/focus/${stackId}`);
+      navigate(`/stack/${stackId}`);
     } catch (error) {
       console.error("Failed to submit dependencies:", error);
       if (axios.isAxiosError(error)) {

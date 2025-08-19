@@ -7,6 +7,7 @@ import CreateStackPage from "@/pages/CreateStackPage";
 import Layout from "@/Layout";
 import AddTopicsPage from "./pages/AddTopicsPage";
 import AddDependenciesPage from "./pages/AddDependenciesPage";
+import StackLayout from "./StackLayout";
 
 function App() {
   return (
@@ -17,10 +18,12 @@ function App() {
 
         <Route element={<Layout />}>
           <Route path="/stacks" element={<StacksPage />} />
-          <Route path="/focus/:stackId" element={<FocusPage />} />
           <Route path="/create-stack" element={<CreateStackPage />} />
-          <Route path="/create-stack/:stackId/topics" element={<AddTopicsPage />}/>
-          <Route path="/create-stack/:stackId/dependencies" element={<AddDependenciesPage />}/>
+          <Route path="/stack" element={<StackLayout />}>
+            <Route path=":stackId" element={<FocusPage />} />
+            <Route path=":stackId/edit-topics" element={<AddTopicsPage />}/>
+            <Route path=":stackId/edit-dependencies" element={<AddDependenciesPage />}/>
+          </Route>
         </Route>
       </Routes>
     </Router>

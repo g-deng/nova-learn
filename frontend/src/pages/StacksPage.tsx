@@ -11,7 +11,7 @@ import { useNavigate } from "react-router-dom";
 function Stack({ name, description, id }: { name: string, description: string, id: string }) {
   const navigate = useNavigate();
   const handleClick = () => {
-    navigate(`/focus/${id}`);
+    navigate(`/stack/${id}`);
   }
   return (
     <Card onClick={handleClick} className="cursor-pointer">
