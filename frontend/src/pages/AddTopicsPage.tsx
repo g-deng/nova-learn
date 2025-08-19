@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertTitle } from '@/components/ui/alert';
 
 export default function AddTopicsPage() {
   const { stackId } = useParams<{ stackId: string }>();
@@ -55,7 +56,13 @@ export default function AddTopicsPage() {
   );
 
   const deleteTopic = (index: number) => {
-    if (topics[index]?.id) deletedTopics.push(topics[index].id);
+    if (topics[index]?.id) {
+      if (window.confirm("Are you sure you want to delete this topic? This action cannot be undone. Associated flashcards and other data will be lost.")) {
+        setDeletedTopics([...deletedTopics, topics[index].id]);
+      } else {
+        return;
+      }
+    }
     setTopics(topics?.filter((_, i) => i !== index) || null);
     console.log("Deleted topic at index:", index);
     console.log(topics);
@@ -187,15 +194,49 @@ export default function AddTopicsPage() {
             </div>
           ))
           : topics?.map((topic, index) => (
-            <div key={topic.name + index} className="flex items-center justify-between p-2 gap-6 border-b">
-              <Input required defaultValue={topic.name} onChange={(e) => { editTopicName(index, e.target.value) }} className="w-[200px]" />
-              <Textarea defaultValue={topic.description} onChange={(e) => { editTopicDescription(index, e.target.value) }} />
-              <Button onClick={() => deleteTopic(index)} variant="destructive">Delete</Button>
-            </div>
+            <TopicLine key={topic.name + index} topic={topic} index={index} editTopicName={editTopicName} editTopicDescription={editTopicDescription} deleteTopic={deleteTopic} />
           ))}
         <Button onClick={newTopic} variant="outline" disabled={(topics && topics.length > 0 && topics[topics.length - 1].name === '') || undefined}>New Topic</Button>
       </div>
       <Button onClick={submitTopics} disabled={loading}>Submit Topics</Button>
     </div>
   )
+}
+
+export function TopicLine({ topic, index, editTopicName, editTopicDescription, deleteTopic }: {
+  topic: { name: string; description: string; id: string | null };
+  index: number;
+  editTopicName: (index: number, name: string) => void;
+  editTopicDescription: (index: number, description: string) => void;
+  deleteTopic: (index: number) => void;
+}) {
+  const [touched, setTouched] = useState(0);
+  return (
+    <div className="flex-row items-start">
+      <div className={"flex items-center justify-between p-2 gap-6 border-b"}>
+        <Input
+          required
+          defaultValue={topic.name}
+          onChange={(e) => { editTopicName(index, e.target.value) }}
+          className={"w-[200px] " + (topic.id ? "bg-gray-200" : "")}
+          onFocus={() => { setTouched(touched + 1); console.log("focus") }}
+          onBlur={() => setTouched(touched - 1)}
+
+        />
+        <Textarea
+          defaultValue={topic.description}
+          onChange={(e) => { editTopicDescription(index, e.target.value) }}
+          className={(topic.id ? "bg-gray-200" : "")}
+          onFocus={() => setTouched(touched + 1)}
+          onBlur={() => setTouched(touched - 1)}
+        />
+        <Button onClick={() => deleteTopic(index)} variant="destructive">Delete</Button>
+      </div>
+      {topic.id && touched > 0 &&
+        <Alert variant="destructive">
+          <AlertTitle>
+            You are editing an existing topic
+          </AlertTitle>
+        </Alert>}
+    </div>)
 }
