@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useOutletContext, useNavigate } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -8,7 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertTitle } from '@/components/ui/alert';
 
 export default function AddTopicsPage() {
-  const { stackId } = useParams<{ stackId: string }>();
+  const stackId = useOutletContext<string>();
   const [topics, setTopics] = useState<{ name: string; description: string; id: string | null }[]>([]);
   const [loading, setLoading] = useState(false);
   const [deletedTopics, setDeletedTopics] = useState<string[]>([]); // ids
@@ -16,6 +16,23 @@ export default function AddTopicsPage() {
   const [saved, setSaved] = useState<{ name: string; description: string; id: string | null }[]>([]);
   const [unsavedChanges, setUnsavedChanges] = useState(false);
   const navigate = useNavigate();
+  const guardedNavigate = (path: string) => {
+    if (!unsavedChanges || window.confirm("Unsaved changes will be lost. Do you want to continue?")) {
+      navigate(path);
+    }
+  }
+
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (unsavedChanges) {
+        e.preventDefault();
+        e.returnValue = ""; // required for Chrome
+      }
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [unsavedChanges]);
+
 
   useEffect(() => {
     const token = localStorage.getItem("authToken");
@@ -226,6 +243,7 @@ export default function AddTopicsPage() {
       <div className="flex items-center gap-4 pb-4">
         <Button onClick={generateTopics} disabled={loading || unsavedChanges}>Generate Topics</Button>
         <Button onClick={submitTopics} disabled={loading || !unsavedChanges}>Save Changes</Button>
+        <Button onClick={() => guardedNavigate(`/stack/${stackId}/edit-dependencies`)} disabled={loading}>Edit Dependencies</Button>
       </div>
     </div>
   )
@@ -255,7 +273,7 @@ export function TopicLine({ topic, index, repeatedNames, editTopicName, editTopi
           defaultValue={topic.description}
           className={(topic.id ? "bg-gray-200" : "")}
           onFocus={() => setTouched(touched + 1)}
-          onBlur={(e) => { editTopicDescription(index, e.target.value); setTouched(touched - 1)}}
+          onBlur={(e) => { editTopicDescription(index, e.target.value); setTouched(touched - 1) }}
         />
         <Button onClick={() => deleteTopic(index)} variant="destructive">Delete</Button>
       </div>

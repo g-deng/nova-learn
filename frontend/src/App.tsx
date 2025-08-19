@@ -5,8 +5,8 @@ import StacksPage from "@/pages/StacksPage";
 import FocusPage from "@/pages/FocusPage";
 import CreateStackPage from "@/pages/CreateStackPage";
 import Layout from "@/Layout";
-import AddTopicsPage from "./pages/AddTopicsPage";
-import AddDependenciesPage from "./pages/AddDependenciesPage";
+import AddTopicsPage from "./pages/EditTopicsPage";
+import AddDependenciesPage from "./pages/EditDependenciesPage";
 import StackLayout from "./StackLayout";
 
 function App() {

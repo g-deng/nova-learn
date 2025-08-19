@@ -19,7 +19,7 @@ import { useEffect, useState } from "react";
 export default function FocusPage() {
   const [topics, setTopics] = useState<Node[]>([]);
   const [dependencies, setDependencies] = useState<Link[]>([]);
-  const { stackId: stackId, stack: stack } = useOutletContext<{ stackId: string, stack: any }>();
+  const stackId = useOutletContext<string>();
   const navigate = useNavigate();
 
   const token = localStorage.getItem("authToken");
