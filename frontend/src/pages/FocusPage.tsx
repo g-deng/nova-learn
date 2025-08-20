@@ -86,7 +86,7 @@ export default function FocusPage() {
   }, [navigate, token])
 
   return (
-    <ResizablePanelGroup direction="horizontal" className="min-h-screen">
+    <ResizablePanelGroup direction="horizontal" className="w-full h-full pt-4">
       <ResizablePanel>
         <Tabs defaultValue="stats" className="w-full h-full">
           <TabsList>
@@ -109,7 +109,14 @@ export default function FocusPage() {
             <TabsTrigger value="list">List View</TabsTrigger>
           </TabsList>
           <TabsContent value="graph">
-            <GraphViewer nodes={topics} links={dependencies} />
+            <GraphViewer
+              nodes={topics}
+              links={dependencies}
+              onNodeClick={(node) => {
+                navigate("#" + node.id);
+              }}
+              onLinkClick={() => { }}
+            />
           </TabsContent>
           <TabsContent value="list">
             <div>

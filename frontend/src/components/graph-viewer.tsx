@@ -1,7 +1,7 @@
 import ForceGraph2D from 'react-force-graph-2d';
 import { useRef, useEffect, useState } from 'react';
 import type { ForceGraphMethods } from 'react-force-graph-2d';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 
 export type Node = {
   id: string;
@@ -18,26 +18,22 @@ export type Link = {
 export type Props = {
   nodes: Node[];
   links: Link[];
-  onNodeClick?: (node: Node) => void;
+  onNodeClick: (node: Node) => void;
+  onLinkClick: (link: Link) => void;
 };
 
-export default function GraphViewer({ nodes, links }: Props) {
+export default function GraphViewer({ nodes, links, onNodeClick, onLinkClick }: Props) {
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const containerRef = useRef<HTMLDivElement>(null!);
   const fgRef = useRef<ForceGraphMethods<any, any>>(null!);;
-  const navigate = useNavigate();
   const location = useLocation();
-
-  const onNodeClick = (node: Node) => {
-    navigate("#" + node.id);
-  }
 
   useEffect(() => {
     const updateSize = () => {
       if (containerRef.current) {
         setDimensions({
-          width: containerRef.current.offsetWidth,
-          height: containerRef.current.offsetHeight,
+          width: containerRef.current.clientWidth,
+          height: containerRef.current.clientHeight,
         });
       }
     };
@@ -51,40 +47,42 @@ export default function GraphViewer({ nodes, links }: Props) {
   }, []);
 
   return (
-    <div ref={containerRef} style={{ width: '100%', height: '100%' }}>
-      <ForceGraph2D
-        ref={fgRef}
-        width={dimensions.width}
-        height={dimensions.height}
-        d3VelocityDecay={0.6}
-        graphData={{ nodes, links }}
-        nodeLabel="name"
-        nodeCanvasObject={(node, ctx, globalScale) => {
-          const label = node.name as string;
-          const radius = 10 / globalScale;
-          const labelPadding = 16 / globalScale;
-          const fontSize = 16 / globalScale;
+    <div ref={containerRef} className="h-full w-full overflow-hidden border border-gray-300">
+      {dimensions.width > 0 && dimensions.height > 0 &&
+        <ForceGraph2D
+          ref={fgRef}
+          width={dimensions.width}
+          height={dimensions.height}
+          d3VelocityDecay={0.6}
+          graphData={{ nodes, links }}
+          nodeLabel="name"
+          nodeCanvasObject={(node, ctx, globalScale) => {
+            const label = node.name as string;
+            const radius = 10 / globalScale;
+            const labelPadding = 16 / globalScale;
+            const fontSize = 16 / globalScale;
 
-          ctx.beginPath();
-          ctx.arc(node.x!, node.y!, radius, 0, 2 * Math.PI, false);
-          ctx.fillStyle = (location.hash.substring(1) == node.id) ? 'lightblue' : 'lightgray';
-          ctx.fill();
+            ctx.beginPath();
+            ctx.arc(node.x!, node.y!, radius, 0, 2 * Math.PI, false);
+            ctx.fillStyle = (location.hash.substring(1) == node.id) ? 'lightblue' : 'lightgray';
+            ctx.fill();
 
-          ctx.font = `${fontSize}px Sans-Serif`;
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillStyle = 'black';
-          ctx.fillText(label, node.x!, node.y! + radius + labelPadding);
-        }}
-        nodePointerAreaPaint={(node, color, ctx) => {
-          ctx.fillStyle = color;
-          ctx.beginPath();
-          ctx.arc(node.x!, node.y!, 8, 0, 2 * Math.PI, false);
-          ctx.fill();
-        }}
-        onNodeClick={onNodeClick}
-        enableNodeDrag={true}
-      />
+            ctx.font = `${fontSize}px Sans-Serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = 'black';
+            ctx.fillText(label, node.x!, node.y! + radius + labelPadding);
+          }}
+          nodePointerAreaPaint={(node, color, ctx) => {
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(node.x!, node.y!, 8, 0, 2 * Math.PI, false);
+            ctx.fill();
+          }}
+          onNodeClick={onNodeClick}
+          onLinkClick={onLinkClick}
+          enableNodeDrag={true}
+        />}
     </div>
   );
 }

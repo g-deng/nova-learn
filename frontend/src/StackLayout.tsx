@@ -1,5 +1,6 @@
 import { Outlet, useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
 import axios from "axios";
 
 export default function StackLayout() {
@@ -45,12 +46,19 @@ export default function StackLayout() {
   }, [navigate, stackId]);
 
   return (
-    <div>
-      <header className="flex items-center gap-4 pb-4">
-        <h1 className="text-xl font-bold">{stack?.name}</h1>
+    <div className="h-full w-full p-4 flex flex-col">
+      <header className="pb-2 flex flex-row gap-4 items-center justify-between border-b">
+        <h1 className="text-xl font-bold cursor-pointer" onClick={()=>navigate(`/stack/${stackId}/`)}>{stack?.name}</h1>
         <p className="text-gray-500">{stack?.description}</p>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={()=>navigate(`/stack/${stackId}/edit-topics`)}>Edit Topics</Button>
+          <Button variant="outline" onClick={()=>navigate(`/stack/${stackId}/edit-dependencies`)}>Edit Dependencies</Button>
+        </div>
       </header>
-      <Outlet context={stackId} />
+      <div className="flex-1">
+        <Outlet context={stackId} />
+      </div>
+
     </div>
   );
 }

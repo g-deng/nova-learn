@@ -11,7 +11,6 @@ export default function AddTopicsPage() {
   const stackId = useOutletContext<string>();
   const [topics, setTopics] = useState<{ name: string; description: string; id: string | null }[]>([]);
   const [loading, setLoading] = useState(false);
-  const [deletedTopics, setDeletedTopics] = useState<string[]>([]); // ids
   const [repeatedNames, setRepeatedNames] = useState<string[]>([]); // repeated names
   const [saved, setSaved] = useState<{ name: string; description: string; id: string | null }[]>([]);
   const [unsavedChanges, setUnsavedChanges] = useState(false);
@@ -87,9 +86,7 @@ export default function AddTopicsPage() {
 
   useEffect(() => {
     setUnsavedChanges(
-      JSON.stringify(topics) !== JSON.stringify(saved) ||
-      deletedTopics.length > 0
-    );
+      JSON.stringify(topics) !== JSON.stringify(saved));
   }, [topics, saved])
 
   const hasEmptyFields = topics?.some(
@@ -98,9 +95,7 @@ export default function AddTopicsPage() {
 
   const deleteTopic = (index: number) => {
     if (topics[index]?.id) {
-      if (window.confirm("Are you sure you want to delete this topic? This action cannot be undone if you save it. Associated flashcards and other data will be lost.")) {
-        setDeletedTopics([...deletedTopics, topics[index].id]);
-      } else {
+      if (!window.confirm("Are you sure you want to delete this topic? This action cannot be undone if you save it. Associated flashcards and other data will be lost.")) {
         return;
       }
     }
@@ -155,7 +150,7 @@ export default function AddTopicsPage() {
               if (topic.id) acc[topic.id] = [topic.name, topic.description];
               return acc;
             }, {} as Record<string, [string, string]>),
-            deleted_topics: deletedTopics
+            deleted_topics: saved.filter(t => t.id && !topics.some(topic => topic.id === t.id)).map(t => t.id),
           },
           {
             headers: {
@@ -164,8 +159,13 @@ export default function AddTopicsPage() {
           }
         );
         if (saveResult.status === 200) {
+          for (const name in saveResult.data) {
+            const index = topics.findIndex(t => t.name === name);
+            if (index !== -1) {
+              topics[index].id = saveResult.data[name];
+            }
+          }
           setSaved(topics);
-          setDeletedTopics([]);
           // navigate(`/create-stack/${stackId}/dependencies`);
         }
       } catch (error) {
@@ -207,7 +207,7 @@ export default function AddTopicsPage() {
         });
       }
       console.log("Parsed topic list:", topicList);
-      setTopics(topicList);
+      setTopics([...topics, ...topicList]);
     } catch (error) {
       console.error("Failed to generate topics:", error);
       if (axios.isAxiosError(error)) {
@@ -225,20 +225,18 @@ export default function AddTopicsPage() {
       <header>
         <h1 className="text-xl font-bold">Edit Topics</h1>
       </header>
-      <div className="flex flex-col gap-4 pb-4">
+      <div className="flex flex-col gap-4 pb-4 overflow-y-auto">
         {topics && topics.map((topic, index) => (
           <TopicLine key={topic.name + index} topic={topic} index={index} repeatedNames={repeatedNames} editTopicName={editTopicName} editTopicDescription={editTopicDescription} deleteTopic={deleteTopic} />
         ))}
         {loading &&
           Array.from({ length: 3 }).map((_, i) => (
             <div key={i} className="flex items-center justify-between gap-6">
-              <Skeleton className="h-10 w-[200px]" />
               <Skeleton className="h-20 flex-1" />
-              <Skeleton className="h-10 w-[100px]" />
             </div>
           ))
         }
-        <Button onClick={newTopic} variant="outline" disabled={(topics && topics.length > 0 && topics[topics.length - 1].name === '') || undefined}>New Topic</Button>
+        <Button onClick={newTopic} variant="outline" disabled={(loading) || (topics && topics.length > 0 && topics[topics.length - 1].name === '') || undefined}>New Topic</Button>
       </div>
       <div className="flex items-center gap-4 pb-4">
         <Button onClick={generateTopics} disabled={loading || unsavedChanges}>Generate Topics</Button>

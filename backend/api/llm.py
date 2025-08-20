@@ -4,7 +4,7 @@ import json
 from typing import List
 
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
-model = "openai/gpt-oss-20b:free" # "google/gemini-2.0-flash-exp:free" # "openai/gpt-3.5-turbo"
+model = "z-ai/glm-4.5-air:free" # "google/gemini-2.0-flash-exp:free" #  # "openai/gpt-3.5-turbo" "openai/gpt-oss-20b:free"
 
 async def extract_topics(subject: str, description: str | None, avoid_topics: List[str] = []) -> dict:
     prompt = (
@@ -12,9 +12,9 @@ async def extract_topics(subject: str, description: str | None, avoid_topics: Li
         f"Description: {description}\n\n"
         "Extract a list of high-level topics relevant to this subject. "
         "For each topic, return a short 1-2 sentence description explaining it. "
-        "Format your output as a JSON object where keys are the topic names "
+        "Format your output as a JSON object where keys are the topic names."
         "and values are the short descriptions. Do not include extra explanation outside the JSON object."
-        "The following topics have already been extracted: " + ", ".join(avoid_topics) + "\n\n"
+        "The following topics have already been extracted. Do not extract thm: " + ", ".join(avoid_topics) + "\n\n"
     )
 
     headers = {
@@ -37,7 +37,14 @@ async def extract_topics(subject: str, description: str | None, avoid_topics: Li
         )
 
     try:
-        content = response.json()["choices"][0]["message"]["content"].strip()
+        content = response.json()["choices"][0]["message"]["content"].strip().replace("'", '"')
+        if not content.startswith("{") or not content.endswith("}"):
+            start = content.find("{")
+            end = content.rfind("}")
+            if start == -1 or end == -1:
+                raise ValueError("Invalid JSON format")
+            content = content[start:end + 1]
+        print("Content received:", content)
         topics_with_descriptions = json.loads(content)
         return {"topics": topics_with_descriptions}
     except Exception as e:

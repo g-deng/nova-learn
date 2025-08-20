@@ -24,18 +24,18 @@ function AppSidebar() {
       <SidebarHeader />
       <SidebarContent>
         <SidebarGroup>
-        <SidebarGroupLabel>Navigation</SidebarGroupLabel>
-        <SidebarGroupContent>
-          {items.map((item) => (
-            <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton asChild>
-                <a href={item.url}>
-                  <span>{item.title}</span>
-                </a>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
-        </SidebarGroupContent>
+          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+          <SidebarGroupContent>
+            {items.map((item) => (
+              <SidebarMenuItem key={item.title}>
+                <SidebarMenuButton asChild>
+                  <a href={item.url}>
+                    <span>{item.title}</span>
+                  </a>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ))}
+          </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter />
@@ -50,18 +50,21 @@ export default function Layout() {
   }
 
   return (
-    <SidebarProvider>
-      <AppSidebar />
-      <div className="min-h-screen w-full flex flex-col">
-        <header className="bg-white shadow px-6 py-4 flex items-center justify-between">
-          <SidebarTrigger />
-          <h1 className="text-xl font-bold">Nova Learn</h1>
-          <Button variant="outline" onClick={logout}>Log out</Button>
-        </header>
-        <main className="flex-1 p-6">
-          <Outlet />
-        </main>
-      </div>
-    </SidebarProvider>
+    <div className="flex h-screen w-screen">
+      <SidebarProvider>
+        <AppSidebar />
+        <div className="flex flex-col flex-1">
+          <header className="flex-none bg-white shadow px-4 py-2 flex items-center justify-between">
+            <SidebarTrigger />
+            <h1 className="text-xl font-bold">Nova Learn</h1>
+            <Button variant="outline" onClick={logout}>Log out</Button>
+          </header>
+
+          <main className="flex-1 overflow-auto">
+            <Outlet />
+          </main>
+        </div>
+      </SidebarProvider>
+    </div>
   );
 }

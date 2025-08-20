@@ -21,12 +21,10 @@ class SubmitTopicListRequest(BaseModel):
     old_topics: dict[uuid.UUID, tuple[str, str]]  # {id: (name, description)}
     deleted_topics: List[uuid.UUID]
 
-class SubmitTopicListResponse(BaseModel):
-    topics: dict[str, uuid.UUID]  # {name: uuid}
-    dependencies: List[List[str]]
-
 class SubmitDependenciesRequest(BaseModel):
-    dependencies: List[List[str]]
+    new_dependencies: List[tuple[str, str]]  # list of [from, to]
+    old_dependencies: dict[str, List[str]]  # {id: [from, to]}
+    deleted_dependencies: List[str]  # list of ids
 
 class CreateStackRequest(BaseModel):
     name: str
@@ -59,16 +57,20 @@ async def generate_topics(stack_id: uuid.UUID, user = Depends(get_current_user),
     else:
         raise HTTPException(status_code=500, detail="Failed to extract topics")
     
-@router.post("/stacks/{stack_id}/submit_topic_list")
+@router.post("/stacks/{stack_id}/submit_topic_list", response_model=dict[str, uuid.UUID])
 async def submit_topic_list(stack_id: uuid.UUID, body: SubmitTopicListRequest, user = Depends(get_current_user), db: Session = Depends(get_db)):
+    out = {}
     for name, description in body.new_topics.items():
-        crud.create_topic(db, body.stack_id, name, description, user.id)
+        topic = crud.create_topic(db, body.stack_id, name, description, user.id)
+        out[name] = topic.id
 
     for topic_id, (name, description) in body.old_topics.items():
         crud.update_topic(db, topic_id, name, description, stack_id, user.id)
 
     for topic_id in body.deleted_topics:
         crud.delete_topic(db, topic_id, stack_id, user.id)
+    
+    return out
 
 @router.post("/stacks/{stack_id}/infer_dependencies", response_model=List[List[str]])
 async def infer_dependencies(stack_id: uuid.UUID, user = Depends(get_current_user), db: Session = Depends(get_db)):
@@ -82,23 +84,39 @@ async def infer_dependencies(stack_id: uuid.UUID, user = Depends(get_current_use
     else:
         raise HTTPException(status_code=500, detail="Failed to infer topic dependencies")
 
-@router.post("/stacks/{stack_id}/submit_dependencies")
+@router.post("/stacks/{stack_id}/submit_dependencies", response_model=dict[str, tuple[uuid.UUID, uuid.UUID]])
 async def submit_dependencies(body: SubmitDependenciesRequest, user = Depends(get_current_user), db: Session = Depends(get_db)):
-    if not body.dependencies:
-        raise HTTPException(status_code=400, detail="Dependencies cannot be empty")
-    
-    for dep in body.dependencies:
-        if len(dep) != 2:
-            raise HTTPException(status_code=400, detail="Each dependency must be a pair of topics")
-    
-    for dep in body.dependencies:
+    new_ids = {}
+    for dep in body.new_dependencies:
         try:
-            if not crud.add_topic_dependency_by_name(db, dep[0], dep[1], user.id):
+            added_dep = crud.add_topic_dependency_by_name(db, dep[0], dep[1], user.id)
+            if not added_dep:
                 raise HTTPException(status_code=404, detail="One or more topics not found or do not belong to user")
+            new_ids[dep[0] + "," + dep[1]] = (added_dep.from_topic_id, added_dep.to_topic_id)
         except Exception as e:
             print(f"Error adding dependency {dep}: {e}")
+
+    for ids, (new_from, new_to) in body.old_dependencies.items():
+        from_id, to_id = ids.split(",")
+        from_id = uuid.UUID(from_id)
+        to_id = uuid.UUID(to_id)
+        try:
+            if not crud.update_topic_dependency(db, from_id, to_id, new_from, new_to, user.id):
+                raise HTTPException(status_code=404, detail="One or more topics not found or do not belong to user")
+        except Exception as e:
+            print(f"Error updating dependency: {e}")
+
+    for ids in body.deleted_dependencies:
+        from_id, to_id = ids.split(",")
+        from_id = uuid.UUID(from_id)
+        to_id = uuid.UUID(to_id)
+        try:
+            if not crud.delete_topic_dependency(db, from_id, to_id, user.id):
+                raise HTTPException(status_code=404, detail="Dependency not found or does not belong to user")
+        except Exception as e:
+            print(f"Error deleting dependency: {e}")
     
-    return
+    return new_ids
 
 @router.post("/add_stack", response_model=StudyStackSchema)
 async def add_stack(stack_data: CreateStackRequest, user = Depends(get_current_user), db: Session = Depends(get_db)):
@@ -122,11 +140,12 @@ async def get_topics(stack_id: uuid.UUID, user = Depends(get_current_user), db: 
         return topics
     raise HTTPException(status_code=404, detail="Stack not found")
 
+
 @router.get("/stacks/{stack_id}/dependencies", response_model=List[TopicDependencySchema])
 async def get_dependencies(stack_id: uuid.UUID, user = Depends(get_current_user), db: Session = Depends(get_db)):
     print("Fetching dependencies")
     dependencies = crud.get_topic_dependencies_by_stack_id(db, stack_id, user.id)
-    if dependencies:
+    if crud.get_stack_by_id(db, stack_id, user.id):
         return dependencies
     raise HTTPException(status_code=404, detail="No dependencies found for this stack")
 

@@ -166,6 +166,34 @@ def add_topic_dependency_by_name(db: Session, from_topic_name: str, to_topic_nam
         topic_dependency = TopicDependency(from_topic_id=from_topic.id, to_topic_id=to_topic.id)
         db.add(topic_dependency)
         db.commit()
-        return True
+        return topic_dependency
     else:
-        return False
+        return None
+    
+def update_topic_dependency(db: Session, from_id: uuid.UUID, to_id: uuid.UUID, new_from: str, new_to: str, user_id: uuid.UUID):
+    dependency = db.query(TopicDependency).filter(TopicDependency.from_topic_id == from_id and TopicDependency.to_topic_id == to_id).first()
+    if not dependency:
+        raise ValueError("Dependency not found")
+    
+    from_topic = db.query(Topic).filter(Topic.name == new_from, Topic.stack.user_id == user_id).first()
+    to_topic = db.query(Topic).filter(Topic.id == new_to, Topic.stack.user_id == user_id).first()
+
+    if not from_topic or not to_topic:
+        raise ValueError("One or more topics not found or do not belong to user")
+    
+    dependency.from_topic_id = from_topic.id
+    dependency.to_topic_id = to_topic.id
+    db.commit()
+    return True
+
+def delete_topic_dependency(db: Session, from_id: uuid.UUID, to_id: uuid.UUID, user_id: uuid.UUID):
+    dependency = db.query(TopicDependency).filter(TopicDependency.from_topic_id == from_id and TopicDependency.to_topic_id == to_id).first()
+    if not dependency:
+        raise ValueError("Dependency not found")
+    
+    if dependency.from_topic.stack.user_id != user_id or dependency.to_topic.stack.user_id != user_id:
+        raise ValueError("Dependency does not belong to user")
+    
+    db.delete(dependency)
+    db.commit()
+    return True
