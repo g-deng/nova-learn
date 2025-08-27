@@ -36,6 +36,7 @@ class StudyStack(Base):
 
     user: Mapped["User"] = relationship(back_populates="study_stacks")
     topics: Mapped[List["Topic"]] = relationship(back_populates="stack", cascade="all, delete-orphan")
+    exams: Mapped[List["Exam"]] = relationship("Exam", back_populates="stack", cascade="all, delete-orphan")
 
 
 class Topic(Base):
@@ -61,6 +62,7 @@ class Topic(Base):
         back_populates="to_topic",
         cascade="all, delete-orphan"
     )
+    questions: Mapped[List["Question"]] = relationship("Question", back_populates="topic")
 
 
 class Flashcard(Base):
@@ -93,3 +95,57 @@ class TopicDependency(Base):
     to_topic: Mapped["Topic"] = relationship(
         foreign_keys=[to_topic_id], back_populates="dependents"
     )
+
+class Exam(Base):
+    __tablename__ = "exams"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    stack_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("study_stacks.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.now(timezone.utc)
+    )
+
+    stack: Mapped["StudyStack"] = relationship(back_populates="exams")
+    questions: Mapped[List["Question"]] = relationship(
+        back_populates="exam", cascade="all, delete-orphan"
+    )
+
+
+class Question(Base):
+    __tablename__ = "questions"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    exam_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("exams.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    text: Mapped[str] = mapped_column(Text, nullable=False)
+    option_a: Mapped[str] = mapped_column(Text, nullable=False)
+    option_b: Mapped[str] = mapped_column(Text, nullable=False)
+    option_c: Mapped[str] = mapped_column(Text, nullable=False)
+    option_d: Mapped[str] = mapped_column(Text, nullable=False)
+    answer: Mapped[str] = mapped_column(String(1), nullable=False) # 'A', 'B', 'C', or 'D'
+    explanation: Mapped[str | None] = mapped_column(Text)
+    order: Mapped[int] = mapped_column(nullable=False, default=0)
+
+    exam: Mapped["Exam"] = relationship(back_populates="questions")
+
+    topic_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("topics.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    topic: Mapped["Topic"] = relationship(back_populates="questions")

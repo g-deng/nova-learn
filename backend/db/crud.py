@@ -1,7 +1,7 @@
 import uuid
 from typing import List
 from sqlalchemy.orm import Session
-from db.models import User, StudyStack, Topic, Flashcard, TopicDependency
+from db.models import Exam, Question, User, StudyStack, Topic, Flashcard, TopicDependency
 
 def get_user_by_id(db: Session, user_id: uuid.UUID):
     return db.query(User).filter(User.id == user_id).first()
@@ -264,3 +264,82 @@ def delete_topic_dependency(db: Session, from_id: uuid.UUID, to_id: uuid.UUID, u
     db.delete(dependency)
     db.commit()
     return True
+
+def create_exam(db: Session, stack_id: uuid.UUID, name: str, user_id: uuid.UUID):
+    stack = db.query(StudyStack).filter(StudyStack.id == stack_id, StudyStack.user_id == user_id).first()
+    if not stack:
+        raise ValueError("Study stack not found or does not belong to user")
+
+    exam = Exam(stack_id=stack_id, name=name)
+    db.add(exam)
+    db.commit()
+    return exam
+
+def get_exam(db: Session, exam_id: uuid.UUID, user_id: uuid.UUID):
+    exam = db.query(Exam).filter(Exam.id == exam_id, Exam.stack.user_id == user_id).first()
+    if not exam:
+        raise ValueError("Exam not found or does not belong to user")
+    return exam
+
+def delete_exam(db: Session, exam_id: uuid.UUID, user_id: uuid.UUID):
+    exam = db.query(Exam).filter(Exam.id == exam_id, Exam.stack.user_id == user_id).first()
+    if not exam:
+        raise ValueError("Exam not found or does not belong to user")
+
+    db.delete(exam)
+    db.commit()
+    return True
+
+def create_question(db: Session, exam_id: uuid.UUID, text: str, options: list[str], answer: str, user_id: uuid.UUID):
+    exam = db.query(Exam).filter(Exam.id == exam_id, Exam.stack.user_id == user_id).first()
+    if not exam:
+        raise ValueError("Exam not found or does not belong to user")
+
+    if answer not in ['A', 'B', 'C', 'D']:
+        raise ValueError("Invalid answer option")
+
+    question = Question(
+        exam_id=exam_id,
+        text=text,
+        option_a=options[0],
+        option_b=options[1],
+        option_c=options[2],
+        option_d=options[3],
+        answer=answer
+    )
+    db.add(question)
+    db.commit()
+    return question
+
+def update_question(db: Session, question_id: uuid.UUID, text: str, options: list[str], answer: str, user_id: uuid.UUID):
+    question = db.query(Question).filter(Question.id == question_id, Question.exam.stack.user_id == user_id).first()
+    if not question:
+        raise ValueError("Question not found or does not belong to user")
+
+    if answer not in ['A', 'B', 'C', 'D']:
+        raise ValueError("Invalid answer option")
+
+    question.text = text
+    question.option_a = options[0]
+    question.option_b = options[1]
+    question.option_c = options[2]
+    question.option_d = options[3]
+    question.answer = answer
+    db.commit()
+    return question
+
+def delete_question(db: Session, question_id: uuid.UUID, user_id: uuid.UUID):
+    question = db.query(Question).filter(Question.id == question_id, Question.exam.stack.user_id == user_id).first()
+    if not question:
+        raise ValueError("Question not found or does not belong to user")
+
+    db.delete(question)
+    db.commit()
+    return True
+
+def get_questions_by_exam(db: Session, exam_id: uuid.UUID, user_id: uuid.UUID):
+    exam = db.query(Exam).filter(Exam.id == exam_id, Exam.stack.user_id == user_id).first()
+    if not exam:
+        raise ValueError("Exam not found or does not belong to user")
+
+    return db.query(Question).filter(Question.exam_id == exam_id).all()
