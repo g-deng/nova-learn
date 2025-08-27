@@ -15,6 +15,7 @@ type Flashcard = {
 }
 
 export default function FlashcardViewer() {
+  const [generating, setGenerating] = useState(false);
   const [flashcards, setFlashcards] = useState<Flashcard[] | null>(null);
   const [flipped, setFlipped] = useState(false);
   const [index, setIndex] = useState(0);
@@ -82,15 +83,47 @@ export default function FlashcardViewer() {
     }
   }
 
+  const handleGenerate = async () => {
+    try {
+      setGenerating(true);
+      const result = await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/flashcards/${location.hash.replace("#", "")}/generate`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      )
+      if (result.status === 200) {
+        setFlashcards(result.data);
+        setIndex(0);
+        setFlipped(false);
+      }
+    } catch (error) {
+      console.error("Failed to fetch flashcards:", error);
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 401) {
+          navigate("/login");
+        }
+      }
+    } finally {
+      setGenerating(false);
+    }
+  }
+
   return (
     <div className="w-full h-full flex flex-col items-center justify-center">
       {flashcards && flashcards.length === 0 &&
-        <div className="text-gray-500">
-          No flashcards available for this topic.
+        <div className="flex flex-col items-center gap-4">
+          <div className="text-gray-500">
+            No flashcards available for this topic.
+          </div>
+          <Button disabled={generating || (flashcards?.length !== 0)} onClick={handleGenerate}>Generate</Button>
         </div>
       }
       {(flashcards === null || flashcards.length > 0) &&
-        <div className="flex flex-col justify-center space-y-4">
+        <div className="flex flex-col justify-center items-center gap-4">
           {!flashcards && <Skeleton className="w-96 h-64 rounded-2xl" />}
           {flashcards && flashcards.length > 0 && card &&
             <motion.div

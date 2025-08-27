@@ -10,12 +10,29 @@ from db.schemas import (
     TopicSchema,
     TopicDependencySchema
 )
-from api.llm import extract_topics, infer_topic_dependencies
+from api.llm import extract_topics, infer_topic_dependencies, extract_flashcards
 from fastapi import Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
 router = APIRouter(prefix="/flashcards")
+
+@router.post("/{topic_id}/generate", response_model=List[FlashcardSchema])
+async def generate_flashcards(topic_id: uuid.UUID, user = Depends(get_current_user), db: Session = Depends(get_db)):
+    topic = crud.get_topic_by_id(db, topic_id, user.id)
+    if not topic:
+        raise HTTPException(status_code=404, detail="Topic not found or does not belong to user")
+    
+    flashcards = await extract_flashcards(topic.name)
+    print("Flashcards")
+    print(flashcards)
+    created_cards = []
+    for card in flashcards:
+        if "front" in card and "back" in card:
+            created_card = crud.create_flashcard(db, topic_id, card["front"], card["back"], user.id)
+            if created_card:
+                created_cards.append(created_card)
+    return created_cards
 
 @router.get("/{topic_id}", response_model=List[FlashcardSchema])
 async def get_flashcards_by_topic(topic_id: uuid.UUID, user = Depends(get_current_user), db: Session = Depends(get_db)):

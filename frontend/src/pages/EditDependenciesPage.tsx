@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Button } from '@/components/ui/button';
@@ -23,11 +23,6 @@ export default function AddDependenciesPage() {
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState<{ from: string, to: string, fromId: string | null, toId: string | null }[]>([]);
   const [unsavedChanges, setUnsavedChanges] = useState(false);
-  const guardedNavigate = (path: string) => {
-    if (!unsavedChanges || window.confirm("Unsaved changes will be lost. Do you want to continue?")) {
-      navigate(path);
-    }
-  }
   
   useEffect(() => {
     const handler = (e: BeforeUnloadEvent) => {

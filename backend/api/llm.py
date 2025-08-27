@@ -50,8 +50,6 @@ async def extract_topics(subject: str, description: str | None, avoid_topics: Li
     except Exception as e:
         return {"error": str(e), "raw_output": response.text}
 
-    
-
 async def infer_topic_dependencies(topics: List[str]) -> List[List[str]]:
     prompt = (
         f"Given the following list of topics:\n\n"
@@ -88,6 +86,56 @@ async def infer_topic_dependencies(topics: List[str]) -> List[List[str]]:
         edges = json.loads(content.replace("'", '"'))
         if isinstance(edges, list) and all(isinstance(pair, list) and len(pair) == 2 for pair in edges):
             return edges
+        else:
+            raise ValueError("Unexpected format")
+    except Exception as e:
+        print("Error parsing response:", e)
+        return []
+    
+
+async def extract_flashcards(topic: str, num_cards: int = 10, prompt: str | None = None) -> List[dict]:
+    prompt = (
+        "Generate a set of " + str(num_cards) + " flashcards for the following topic:\n\n"
+        f"Topic: {topic}\n\n"
+        "Each flashcard should have a 'front' (question/prompt) and 'back' (answer/explanation). "
+        "Format your output as a JSON array of objects with 'front' and 'back' fields. "
+        "Do not include any extra text outside the JSON array."
+    )
+
+    headers = {
+        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+    }
+
+    payload = {
+        "model": model,
+        "messages": [
+            {"role": "user", "content": prompt}
+        ],
+        "temperature": 0.2
+    }
+
+    print("Attempting to extract flashcards:")
+
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            "https://openrouter.ai/api/v1/chat/completions",
+            json=payload,
+            headers=headers
+        )
+
+    try:
+        content = response.json()["choices"][0]["message"]["content"]
+        if not content.startswith("[") or not content.endswith("]"):
+            start = content.find("[")
+            end = content.rfind("]")
+            if start == -1 or end == -1:
+                raise ValueError("Invalid JSON format")
+            content = content[start:end + 1]
+        cards = json.loads(content)
+        print("Cards")
+        print(cards)
+        if isinstance(cards, list) and all(isinstance(card, dict) for card in cards):
+            return cards
         else:
             raise ValueError("Unexpected format")
     except Exception as e:

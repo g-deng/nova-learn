@@ -123,9 +123,9 @@ export default function FocusPage() {
         <Tabs defaultValue="stats" className="w-full h-full">
           <TabsList>
             <TabsTrigger value="stats">Stats</TabsTrigger>
-            <TabsTrigger value="learn">Learn</TabsTrigger>
-            <TabsTrigger value="study">Study</TabsTrigger>
-            <TabsTrigger value="review">Review</TabsTrigger>
+            <TabsTrigger value="learn">Chat</TabsTrigger>
+            <TabsTrigger value="study">Flashcards</TabsTrigger>
+            <TabsTrigger value="review">Exams</TabsTrigger>
           </TabsList>
           <TabsContent value="stats">Stats</TabsContent>
           <TabsContent value="learn">Learn</TabsContent>

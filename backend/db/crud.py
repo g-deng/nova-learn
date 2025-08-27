@@ -48,6 +48,15 @@ def create_topic(db: Session, stack_id: uuid.UUID, name: str, description: str, 
     db.refresh(topic)
     return topic
 
+def get_topic_by_id(db: Session, topic_id: uuid.UUID, user_id: uuid.UUID):
+    topic = db.query(Topic).filter(Topic.id == topic_id).first()
+    if not topic:
+        raise ValueError("Topic not found")
+    stack = db.query(StudyStack).filter(StudyStack.id == topic.stack_id, StudyStack.user_id == user_id).first()
+    if not stack:
+        raise ValueError("Topic does not belong to user")
+    return topic
+
 def update_topic(db: Session, topic_id: uuid.UUID, name: str, description: str, stack_id: uuid.UUID, user_id: uuid.UUID):
     if db.query(StudyStack).filter(StudyStack.id == stack_id, StudyStack.user_id == user_id).first() is None:
         raise ValueError
