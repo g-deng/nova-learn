@@ -74,6 +74,8 @@ async def infer_topic_dependencies(topics: List[str]) -> List[List[str]]:
         "temperature": 0.2
     }
 
+    print("Attempting to infer dependencies:")
+
     async with httpx.AsyncClient() as client:
         response = await client.post(
             "https://openrouter.ai/api/v1/chat/completions",
@@ -81,9 +83,8 @@ async def infer_topic_dependencies(topics: List[str]) -> List[List[str]]:
             headers=headers
         )
 
-    content = response.json()["choices"][0]["message"]["content"]
-
     try:
+        content = response.json()["choices"][0]["message"]["content"]
         edges = json.loads(content.replace("'", '"'))
         if isinstance(edges, list) and all(isinstance(pair, list) and len(pair) == 2 for pair in edges):
             return edges
@@ -91,5 +92,4 @@ async def infer_topic_dependencies(topics: List[str]) -> List[List[str]]:
             raise ValueError("Unexpected format")
     except Exception as e:
         print("Error parsing response:", e)
-        print("Raw content:", content)
         return []

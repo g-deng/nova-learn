@@ -72,16 +72,28 @@ def delete_topic(db: Session, topic_id: uuid.UUID, stack_id: uuid.UUID, user_id:
     db.commit()
     return True
 
+def get_flashcards_by_stack_id(db: Session, stack_id: uuid.UUID, user_id: uuid.UUID):
+    stack = db.query(StudyStack).filter(StudyStack.id == stack_id, StudyStack.user_id == user_id).first()
+    if not stack:
+        raise ValueError("Stack not found or does not belong to user")
+    return db.query(Flashcard).join(Topic).filter(Topic.stack_id == stack_id).all()
+
 def get_flashcards_by_topic_id(db: Session, topic_id: uuid.UUID, user_id: uuid.UUID):
-    topic = db.query(Topic).filter(Topic.id == topic_id, Topic.stack.user_id == user_id).first()
+    topic = db.query(Topic).filter(Topic.id == topic_id).first()
     if not topic:
-        return []
+        raise ValueError("Topic not found")
+    stack = db.query(StudyStack).filter(StudyStack.id == topic.stack_id, StudyStack.user_id == user_id).first()
+    if not stack:
+        raise ValueError("Topic does not belong to user")
     return db.query(Flashcard).filter(Flashcard.topic_id == topic_id).all()
 
 def create_flashcard(db: Session, topic_id: uuid.UUID, front: str, back: str, user_id: uuid.UUID):
-    topic = db.query(Topic).filter(Topic.id == topic_id, Topic.stack.user_id == user_id).first()
+    topic = db.query(Topic).filter(Topic.id == topic_id).first()
     if not topic:
-        raise ValueError("Topic not found or does not belong to user")
+        raise ValueError("Topic not found")
+    stack = db.query(StudyStack).filter(StudyStack.id == topic.stack_id, StudyStack.user_id == user_id).first()
+    if not stack:
+        raise ValueError("Topic does not belong to user")
     flashcard = Flashcard(topic_id=topic_id, front=front, back=back)
     db.add(flashcard)
     db.commit()
@@ -89,10 +101,13 @@ def create_flashcard(db: Session, topic_id: uuid.UUID, front: str, back: str, us
     return flashcard
 
 def create_flashcards_bulk(db: Session, topic_id: uuid.UUID, fronts: list[str], backs: List[str], user_id: uuid.UUID):
-    topic = db.query(Topic).filter(Topic.id == topic_id, Topic.stack.user_id == user_id).first()
+    topic = db.query(Topic).filter(Topic.id == topic_id).first()
     if not topic:
-        raise ValueError("Topic not found or does not belong to user")
-
+        raise ValueError("Topic not found")
+    stack = db.query(StudyStack).filter(StudyStack.id == topic.stack_id, StudyStack.user_id == user_id).first()
+    if not stack:
+        raise ValueError("Topic does not belong to user")
+    
     if len(fronts) != len(backs): return False
     flashcards = []
     for (front, back) in zip(fronts, backs):
@@ -102,8 +117,51 @@ def create_flashcards_bulk(db: Session, topic_id: uuid.UUID, fronts: list[str], 
     db.commit()
     return True
 
+def edit_flashcard(db: Session, id: uuid.UUID, front: str, back: str, user_id: uuid.UUID):
+    flashcard = db.query(Flashcard).filter(Flashcard.id == id).first()
+    if not flashcard:
+        raise ValueError("Flashcard not found")
+    topic = db.query(Topic).filter(Topic.id == flashcard.topic_id).first()
+    if not topic:
+        raise ValueError("Topic not found")
+    stack = db.query(StudyStack).filter(StudyStack.id == topic.stack_id, StudyStack.user_id == user_id).first()
+    if not stack:
+        raise ValueError("Flashcard does not belong to user")
+    
+    if front != flashcard.front:
+        flashcard.front = front
+    if back != flashcard.back:
+        flashcard.back = back
+    db.commit()
+    db.refresh(flashcard)
+    return flashcard
+
+def delete_flashcard(db: Session, id: uuid.UUID, user_id: uuid.UUID):
+    flashcard = db.query(Flashcard).filter(Flashcard.id == id).first()
+    if not flashcard:
+        raise ValueError("Flashcard not found")
+    topic = db.query(Topic).filter(Topic.id == flashcard.topic_id).first()
+    if not topic:
+        raise ValueError("Topic not found")
+    stack = db.query(StudyStack).filter(StudyStack.id == topic.stack_id, StudyStack.user_id == user_id).first()
+    if not stack:
+        raise ValueError("Flashcard does not belong to user")
+    
+    db.delete(flashcard)
+    db.commit()
+    return True
+
 def add_flashcard_explanation(db: Session, id: uuid.UUID, explanation: str, user_id: uuid.UUID):
-    flashcard = db.query(Flashcard).filter(Flashcard.id == id, Flashcard.topic.stack.user_id == user_id).first()
+    flashcard = db.query(Flashcard).filter(Flashcard.id == id).first()
+    if not flashcard:
+        raise ValueError("Flashcard not found")
+    topic = db.query(Topic).filter(Topic.id == flashcard.topic_id).first()
+    if not topic:
+        raise ValueError("Topic not found")
+    stack = db.query(StudyStack).filter(StudyStack.id == topic.stack_id, StudyStack.user_id == user_id).first()
+    if not stack:
+        raise ValueError("Flashcard does not belong to user")
+    
     if flashcard:
         flashcard.explanation = explanation
         db.commit()
