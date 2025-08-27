@@ -44,7 +44,7 @@ export default function AddTopicsPage() {
       setLoading(true);
       try {
         const topicsResult = await axios.get(
-          `${import.meta.env.VITE_BACKEND_URL}/api/stacks/${stackId}/topics`,
+          `${import.meta.env.VITE_BACKEND_URL}/stacks/${stackId}/topics`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -139,7 +139,7 @@ export default function AddTopicsPage() {
     const saveTopics = async () => {
       try {
         const saveResult = await axios.post(
-          `${import.meta.env.VITE_BACKEND_URL}/api/stacks/${stackId}/submit_topic_list`,
+          `${import.meta.env.VITE_BACKEND_URL}/stacks/${stackId}/submit_topic_list`,
           {
             stack_id: stackId,
             new_topics: topics.reduce((acc, topic) => {
@@ -190,7 +190,7 @@ export default function AddTopicsPage() {
     setLoading(true);
     try {
       const res = await axios.post(
-        `${import.meta.env.VITE_BACKEND_URL}/api/stacks/${stackId}/generate_topics`,
+        `${import.meta.env.VITE_BACKEND_URL}/stacks/${stackId}/generate_topics`,
         null,
         {
           headers: {

@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/tabs"
 import GraphViewer from "@/components/graph-viewer";
 import type { Node, Link } from "@/components/graph-viewer";
+import FlashcardViewer from "@/components/flashcard-viewer";
 import axios from "axios";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { useEffect, useState } from "react";
@@ -31,7 +32,7 @@ export default function FocusPage() {
   const fetchTopicData = async () => {
     try {
       const topicsResult = await axios.get(
-        `${import.meta.env.VITE_BACKEND_URL}/api/stacks/${stackId}/topics`,
+        `${import.meta.env.VITE_BACKEND_URL}/stacks/${stackId}/topics`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -57,7 +58,7 @@ export default function FocusPage() {
   const fetchDependencyData = async () => {
     try {
       const dependencyResult = await axios.get(
-        `${import.meta.env.VITE_BACKEND_URL}/api/stacks/${stackId}/dependencies`,
+        `${import.meta.env.VITE_BACKEND_URL}/stacks/${stackId}/dependencies`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -87,21 +88,6 @@ export default function FocusPage() {
 
   return (
     <ResizablePanelGroup direction="horizontal" className="w-full h-full pt-4">
-      <ResizablePanel>
-        <Tabs defaultValue="stats" className="w-full h-full">
-          <TabsList>
-            <TabsTrigger value="stats">Stats</TabsTrigger>
-            <TabsTrigger value="learn">Learn</TabsTrigger>
-            <TabsTrigger value="study">Study</TabsTrigger>
-            <TabsTrigger value="review">Review</TabsTrigger>
-          </TabsList>
-          <TabsContent value="stats">Stats</TabsContent>
-          <TabsContent value="learn">Learn</TabsContent>
-          <TabsContent value="study">Study</TabsContent>
-          <TabsContent value="review">Review</TabsContent>
-        </Tabs>
-      </ResizablePanel>
-      <ResizableHandle />
       <ResizablePanel className="pl-4">
         <Tabs defaultValue="graph" className="w-full h-full">
           <TabsList>
@@ -132,6 +118,24 @@ export default function FocusPage() {
           </TabsContent>
         </Tabs>
       </ResizablePanel>
+      <ResizableHandle />
+      <ResizablePanel>
+        <Tabs defaultValue="stats" className="w-full h-full">
+          <TabsList>
+            <TabsTrigger value="stats">Stats</TabsTrigger>
+            <TabsTrigger value="learn">Learn</TabsTrigger>
+            <TabsTrigger value="study">Study</TabsTrigger>
+            <TabsTrigger value="review">Review</TabsTrigger>
+          </TabsList>
+          <TabsContent value="stats">Stats</TabsContent>
+          <TabsContent value="learn">Learn</TabsContent>
+          <TabsContent value="study">
+            <FlashcardViewer/>
+          </TabsContent>
+          <TabsContent value="review">Review</TabsContent>
+        </Tabs>
+      </ResizablePanel>
+      
     </ResizablePanelGroup>
   );
 }

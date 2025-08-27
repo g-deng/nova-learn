@@ -22,7 +22,7 @@ export default function StackLayout() {
     const fetchStackData = async () => {
       try {
         const stackResult = await axios.get(
-          `${import.meta.env.VITE_BACKEND_URL}/api/stacks/${stackId}`,
+          `${import.meta.env.VITE_BACKEND_URL}/stacks/${stackId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,

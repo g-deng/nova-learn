@@ -57,7 +57,7 @@ export default function AddDependenciesPage() {
       setLoading(true);
       try {
         const topicsResult = await axios.get(
-          `${import.meta.env.VITE_BACKEND_URL}/api/stacks/${stackId}/topics`,
+          `${import.meta.env.VITE_BACKEND_URL}/stacks/${stackId}/topics`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -70,7 +70,7 @@ export default function AddDependenciesPage() {
         setTopics(parsedTopics);
 
         const dependenciesResult = await axios.get(
-          `${import.meta.env.VITE_BACKEND_URL}/api/stacks/${stackId}/dependencies`,
+          `${import.meta.env.VITE_BACKEND_URL}/stacks/${stackId}/dependencies`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -108,7 +108,7 @@ export default function AddDependenciesPage() {
     setLoading(true);
     try {
       const res = await axios.post(
-        `${import.meta.env.VITE_BACKEND_URL}/api/stacks/${stackId}/infer_dependencies`,
+        `${import.meta.env.VITE_BACKEND_URL}/stacks/${stackId}/infer_dependencies`,
         null,
         {
           headers: {
@@ -141,7 +141,7 @@ export default function AddDependenciesPage() {
 
     try {
       const res = await axios.post(
-        `${import.meta.env.VITE_BACKEND_URL}/api/stacks/${stackId}/submit_dependencies`,
+        `${import.meta.env.VITE_BACKEND_URL}/stacks/${stackId}/submit_dependencies`,
         {
           new_dependencies: dependencies.filter(dep => !dep.fromId).map((dep) => [dep.from, dep.to]),
           old_dependencies: saved.reduce((acc, dep) => {

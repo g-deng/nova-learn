@@ -39,7 +39,7 @@ export default function StacksPage() {
     const fetchStacks = async () => {
       try {
         const res = await axios.get(
-          import.meta.env.VITE_BACKEND_URL + "/api/stacks",
+          import.meta.env.VITE_BACKEND_URL + "/stacks",
           {
             headers: {
               Authorization: `Bearer ${token}`,

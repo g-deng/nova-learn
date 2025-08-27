@@ -43,7 +43,7 @@ export default function CreateStackPage() {
     }
     console.log(token);
     const res = await axios.post(
-      import.meta.env.VITE_BACKEND_URL + "/api/add_stack",
+      import.meta.env.VITE_BACKEND_URL + "/stacks/add_stack",
       {
         name: values.title,
         description: values.description
