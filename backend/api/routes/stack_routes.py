@@ -64,8 +64,8 @@ async def submit_topic_list(stack_id: uuid.UUID, body: SubmitTopicListRequest, u
         crud.update_topic(db, topic_id, name, description, stack_id, user.id)
 
     for topic_id in body.deleted_topics:
-        crud.delete_topic(db, topic_id, stack_id, user.id)
-    
+        crud.delete_topic(db, topic_id, user.id)
+
     return out
 
 @router.post("/{stack_id}/infer_dependencies", response_model=List[List[str]])

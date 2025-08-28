@@ -149,7 +149,7 @@ async def create_multiple_choice_exam(title: str, topics: List[str], num_questio
         "Generate the questions for a multiple-choice exam titled '" + title + "' with " + str(num_questions) + " questions covering the following topics:\n\n"
         f"Topics: {topics}\n\n"
         "Each question should have 4 answer choices labeled 'A', 'B', 'C', and 'D', with one correct answer. "
-        "Format your output as a JSON array of objects with 'text', 'choices' (a dict of options), and 'answer' (the correct option letter). "
+        "Format your output as a JSON array of objects with 'text', 'choices' (a dict of options keyed by letter), 'topic_name' (the name of the topic), and 'answer' (the correct option letter). "
         "Do not include any extra text outside the JSON array."
     )
 
@@ -191,4 +191,5 @@ async def create_multiple_choice_exam(title: str, topics: List[str], num_questio
             raise ValueError("Unexpected format")
     except Exception as e:
         print("Error parsing response:", e)
+        print(response.text)
         return []

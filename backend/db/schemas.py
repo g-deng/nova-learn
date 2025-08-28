@@ -61,8 +61,13 @@ class QuestionSchema(BaseModel):
     id: uuid.UUID
     exam_id: uuid.UUID
     text: str
-    choices: List[str]
+    option_a: str
+    option_b: str
+    option_c: str
+    option_d: str
     answer: str
+    explanation: Optional[str]
+    order: int
 
     class Config:
         orm_mode = True
@@ -70,9 +75,18 @@ class QuestionSchema(BaseModel):
 class ExamSchema(BaseModel):
     id: uuid.UUID
     stack_id: uuid.UUID
-    title: str
+    name: str
     created_at: datetime
-    questions: List[QuestionSchema] = []
+
+    class Config:
+        orm_mode = True
+
+class ExamInfoSchema(BaseModel):
+    id: uuid.UUID
+    stack_id: uuid.UUID
+    name: str
+    created_at: datetime
+    topics: List[str]
 
     class Config:
         orm_mode = True
