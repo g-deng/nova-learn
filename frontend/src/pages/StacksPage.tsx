@@ -4,7 +4,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import axios from "axios";
+import api from "@/lib/api";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -30,31 +30,13 @@ export default function StacksPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const token = localStorage.getItem("authToken");
-    if (!token) {
-      navigate("/login");
-      return;
-    }
-
     const fetchStacks = async () => {
       try {
-        const res = await axios.get(
-          import.meta.env.VITE_BACKEND_URL + "/stacks",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const res = await api.get("/stacks");
         console.log("stackList:", res.data);
         setStacks(res.data);
       } catch (error) {
         console.error("Failed to fetch stacks:", error);
-        if (axios.isAxiosError(error)) {
-          if (error.response?.status === 401) {
-            navigate("/login");
-          }
-        }
       }
     };
 

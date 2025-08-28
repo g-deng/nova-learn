@@ -32,7 +32,7 @@ class CreateStackRequest(BaseModel):
 
 router = APIRouter(prefix="/stacks")
 
-@router.get("/", response_model=List[StudyStackSchema])
+@router.get("", response_model=List[StudyStackSchema])
 async def get_stacks(user = Depends(get_current_user), db: Session = Depends(get_db)):
     return crud.get_stacks_by_user_id(db, user.id)
 

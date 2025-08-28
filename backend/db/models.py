@@ -117,6 +117,9 @@ class Exam(Base):
     questions: Mapped[List["Question"]] = relationship(
         back_populates="exam", cascade="all, delete-orphan"
     )
+    exam_attempts: Mapped[List["ExamAttempt"]] = relationship(
+        back_populates="exam"
+    )
 
 
 class Question(Base):
@@ -150,8 +153,12 @@ class Question(Base):
     )
     topic: Mapped["Topic"] = relationship(back_populates="questions")
 
+    question_attempts: Mapped[List["QuestionAttempt"]] = relationship(
+        back_populates="question", cascade="all, delete-orphan"
+    )
+
 class ExamAttempt(Base):
-    __table_name__ = "exam_attempts"
+    __tablename__ = "exam_attempts"
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
@@ -168,7 +175,10 @@ class ExamAttempt(Base):
     scored_questions: Mapped[int | None] = mapped_column(nullable=True)
     score: Mapped[int | None] = mapped_column(nullable=True)
 
-    exam: Mapped["Exam"] = relationship(back_populates="attempts")
+    exam: Mapped["Exam"] = relationship(back_populates="exam_attempts")
+    question_attempts: Mapped[List["QuestionAttempt"]] = relationship(
+        back_populates="exam_attempt", cascade="all, delete-orphan"
+    )
 
 class QuestionAttempt(Base):
     __tablename__ = "question_attempts"
@@ -194,4 +204,4 @@ class QuestionAttempt(Base):
     manual_credit: Mapped[bool] = mapped_column(nullable=False, default=False)
 
     exam_attempt: Mapped["ExamAttempt"] = relationship(back_populates="question_attempts")
-    question: Mapped["Question"] = relationship(back_populates="attempts")
+    question: Mapped["Question"] = relationship(back_populates="question_attempts")

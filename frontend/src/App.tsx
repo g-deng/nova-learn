@@ -11,6 +11,7 @@ import StackLayout from "@/StackLayout";
 
 import FlashcardPage from "@/pages/focus/FlashcardPage";
 import ExamPage from "@/pages/focus/ExamPage";
+import ExamInfoPage from "@/pages/focus/ExamInfoPage";
 import ExamListPage from "@/pages/focus/ExamListPage";
 
 function App() {
@@ -28,7 +29,8 @@ function App() {
               <Route path="flashcards" element={<FlashcardPage />} />
               {/* <Route path="chat" element={<ChatPage />} /> */}
               <Route path="exams" element={<ExamListPage />} />
-              <Route path="exams/:examId" element={<ExamPage />} />
+              <Route path="exams/:examId" element={<ExamInfoPage />} />
+              <Route path="exams/:examId/take" element={<ExamPage />} />
               {/* <Route path="stats" element={<StatisticsPage />} /> */}
             </Route>
             <Route path=":stackId/edit-topics" element={<AddTopicsPage />}/>

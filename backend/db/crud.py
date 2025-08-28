@@ -226,6 +226,20 @@ def get_exams_by_stack(db: Session, stack_id: uuid.UUID, user_id: uuid.UUID):
     get_stack_by_id(db, stack_id, user_id)
     return db.query(Exam).filter(Exam.stack_id == stack_id).all()
 
+def get_exam_with_topics(db: Session, exam_id: uuid.UUID, user_id: uuid.UUID):
+    exam = get_exam_by_id(db, exam_id, user_id)
+    topics = (
+        db.query(Topic.name)
+        .join(Question, Question.topic_id == Topic.id)
+        .filter(Question.exam_id == exam.id)
+        .distinct()
+        .all()
+    )
+    topic_names = [t[0] for t in topics]
+    exam_dict = exam.__dict__.copy()
+    exam_dict['topics'] = topic_names
+    return exam_dict
+
 def get_exams_by_stack_with_topics(db: Session, stack_id: uuid.UUID, user_id: uuid.UUID):
     exams = get_exams_by_stack(db, stack_id, user_id)
     result = []

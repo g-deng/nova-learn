@@ -49,7 +49,7 @@ export function LoginForm({
     try {
       const userCred = await loginWithGoogle();
       const user = userCred.user;
-      const token = await user.getIdToken(true);
+      const token = await user.getIdToken();
       localStorage.setItem("authToken", token);
       console.log("Login success:", user);
       navigate("/stacks");

@@ -40,6 +40,15 @@ async def get_exam(exam_id: uuid.UUID, user = Depends(get_current_user), db: Ses
         raise HTTPException(status_code=404, detail="Exam not found")
     return exam
 
+@router.get("/{exam_id}/info", response_model=ExamInfoSchema)
+async def get_exam_info(exam_id: uuid.UUID, user = Depends(get_current_user), db: Session = Depends(get_db)):
+    try: 
+        exam_info = crud.get_exam_with_topics(db, exam_id, user.id)
+        return exam_info
+    except ValueError:
+        raise HTTPException(status_code=404, detail="Exam not found")
+   
+
 @router.get("/{stack_id}/list", response_model=List[ExamInfoSchema])
 async def list_exams(stack_id: uuid.UUID, user = Depends(get_current_user), db: Session = Depends(get_db)):
     exams = crud.get_exams_by_stack_with_topics(db, stack_id, user.id)

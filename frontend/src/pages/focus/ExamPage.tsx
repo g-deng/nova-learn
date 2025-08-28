@@ -29,7 +29,6 @@ type Question = {
   answer: "A" | "B" | "C" | "D";
 }
 
-
 export default function ExamPage() {
   const [examName, setExamName] = useState("");
   const [questions, setQuestions] = useState<Question[]>([]);
