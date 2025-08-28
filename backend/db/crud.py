@@ -1,9 +1,9 @@
-from inspect import stack
 import uuid
 from typing import List
 from sqlalchemy.orm import Session
-from db.models import Exam, Question, User, StudyStack, Topic, Flashcard, TopicDependency
+from db.models import Exam, ExamAttempt, Question, QuestionAttempt, User, StudyStack, Topic, Flashcard, TopicDependency
 
+# USERS
 def get_user_by_id(db: Session, user_id: uuid.UUID):
     return db.query(User).filter(User.id == user_id).first()
 
@@ -17,6 +17,7 @@ def create_user(db: Session, firebase_uid: str, name: str):
     db.refresh(user)
     return user
 
+# STACKS
 def get_stacks_by_user_id(db: Session, user_id: uuid.UUID):
     return db.query(StudyStack).filter(StudyStack.user_id == user_id).all()
 
@@ -32,6 +33,8 @@ def create_stack(db: Session, user_id: uuid.UUID, name: str, description: str):
     db.commit()
     db.refresh(stack)
     return stack
+
+# TOPICS
 
 def get_topics_by_stack_id(db: Session, stack_id: uuid.UUID, user_id: uuid.UUID):
     get_stack_by_id(db, stack_id, user_id)
@@ -74,6 +77,8 @@ def delete_topic(db: Session, topic_id: uuid.UUID, user_id: uuid.UUID):
     db.delete(topic)
     db.commit()
     return True
+
+# FLASHCARDS
 
 def get_flashcard_by_id(db: Session, flashcard_id: uuid.UUID, user_id: uuid.UUID):
     flashcard = db.query(Flashcard).filter(Flashcard.id == flashcard_id).first()
@@ -133,6 +138,7 @@ def add_flashcard_explanation(db: Session, id: uuid.UUID, explanation: str, user
     db.refresh(flashcard)
     return flashcard
     
+# DEPENDENCIES
 
 def get_topic_dependencies_by_stack_id(db: Session, stack_id: uuid.UUID, user_id: uuid.UUID):
     stack = get_stack_by_id(db, stack_id, user_id)
@@ -207,6 +213,8 @@ def delete_topic_dependency(db: Session, from_id: uuid.UUID, to_id: uuid.UUID, u
     db.commit()
     return True
 
+# EXAMS
+
 def create_exam(db: Session, stack_id: uuid.UUID, name: str, user_id: uuid.UUID):
     get_stack_by_id(db, stack_id, user_id)
     exam = Exam(stack_id=stack_id, name=name)
@@ -248,6 +256,8 @@ def delete_exam(db: Session, exam_id: uuid.UUID, user_id: uuid.UUID):
     db.commit()
     return True
 
+# QUESTIONS
+
 def create_question(db: Session, exam_id: uuid.UUID, text: str, options: list[str], answer: str, topic_id: uuid.UUID, user_id: uuid.UUID):
     get_exam_by_id(db, exam_id, user_id)
     if answer not in ['A', 'B', 'C', 'D']:
@@ -267,7 +277,7 @@ def create_question(db: Session, exam_id: uuid.UUID, text: str, options: list[st
     db.commit()
     return question
 
-def get_question(db: Session, question_id: uuid.UUID, user_id: uuid.UUID):
+def get_question_by_id(db: Session, question_id: uuid.UUID, user_id: uuid.UUID):
     question = db.query(Question).filter(Question.id == question_id).first()
     if not question:
         raise ValueError("Question not found")
@@ -275,7 +285,7 @@ def get_question(db: Session, question_id: uuid.UUID, user_id: uuid.UUID):
     return question
 
 def update_question(db: Session, question_id: uuid.UUID, text: str, options: list[str], answer: str, user_id: uuid.UUID):
-    question = get_question(db, question_id, user_id)
+    question = get_question_by_id(db, question_id, user_id)
     
     if answer not in ['A', 'B', 'C', 'D']:
         raise ValueError("Invalid answer option")
@@ -290,7 +300,7 @@ def update_question(db: Session, question_id: uuid.UUID, text: str, options: lis
     return question
 
 def delete_question(db: Session, question_id: uuid.UUID, user_id: uuid.UUID):
-    question = get_question(db, question_id, user_id)
+    question = get_question_by_id(db, question_id, user_id)
     db.delete(question)
     db.commit()
     return True
@@ -298,3 +308,78 @@ def delete_question(db: Session, question_id: uuid.UUID, user_id: uuid.UUID):
 def get_questions_by_exam(db: Session, exam_id: uuid.UUID, user_id: uuid.UUID):
     get_exam_by_id(db, exam_id, user_id)
     return db.query(Question).filter(Question.exam_id == exam_id).all()
+
+# EXAM ATTEMPTS
+def create_exam_attempt(db: Session, exam_id: uuid.UUID, user_id: uuid.UUID):
+    get_exam_by_id(db, exam_id, user_id)
+    exam_attempt = ExamAttempt(exam_id=exam_id)
+    db.add(exam_attempt)
+    db.commit()
+    return exam_attempt
+
+def get_exam_attempt_by_id(db: Session, attempt_id: uuid.UUID, user_id: uuid.UUID):
+    exam_attempt = db.query(ExamAttempt).filter(ExamAttempt.id == attempt_id).first()
+    if not exam_attempt:
+        raise ValueError("Exam attempt not found")
+    get_exam_by_id(db, exam_attempt.exam_id, user_id)
+    return exam_attempt
+
+def score_exam_attempt(db: Session, attempt_id: uuid.UUID, user_id: uuid.UUID):
+    exam_attempt = get_exam_attempt_by_id(db, attempt_id, user_id)
+    question_attempts = get_question_attempts_by_exam(db, exam_attempt.exam_id, user_id)
+    total_scored_questions = 0
+    total_score = 0
+    for q in question_attempts:
+        if q.scored:
+            total_scored_questions += 1
+            if q.manual_credit or q.is_correct:
+                total_score += 1
+    exam_attempt.score = total_score
+    exam_attempt.scored_questions = total_scored_questions
+    db.commit()
+    return exam_attempt
+
+def delete_exam_attempt(db: Session, attempt_id: uuid.UUID, user_id: uuid.UUID):
+    exam_attempt = get_exam_attempt_by_id(db, attempt_id, user_id)
+    db.delete(exam_attempt)
+    db.commit()
+    return True
+
+# QUESTION ATTEMPTS
+def create_question_attempt(db: Session, exam_attempt_id: uuid.UUID, question_id: uuid.UUID, selected_option: str, user_id: uuid.UUID):
+    get_exam_attempt_by_id(db, exam_attempt_id, user_id)
+    question = get_question_by_id(db, question_id, user_id)
+    question_attempt = QuestionAttempt(
+        exam_attempt_id=exam_attempt_id,
+        question_id=question_id,
+        selected_option=selected_option,
+        is_correct=(selected_option == question.answer)
+    )
+    db.add(question_attempt)
+    db.commit()
+    return question_attempt
+
+def get_question_attempt_by_id(db: Session, question_attempt_id: uuid.UUID, user_id: uuid.UUID):
+    question_attempt = db.query(QuestionAttempt).filter(QuestionAttempt.id == question_attempt_id).first()
+    if not question_attempt:
+        raise ValueError("Question attempt not found")
+    get_exam_attempt_by_id(db, question_attempt.exam_attempt_id, user_id)
+    get_question_by_id(db, question_attempt.question_id, user_id)
+    return question_attempt
+
+def get_question_attempts_by_exam(db: Session, exam_id: uuid.UUID, user_id: uuid.UUID):
+    get_exam_by_id(db, exam_id, user_id)
+    attempts = (
+        db.query(QuestionAttempt)
+        .join(ExamAttempt, QuestionAttempt.exam_attempt_id == ExamAttempt.id)
+        .filter(ExamAttempt.exam_id == exam_id)
+        .all()
+    )
+    return attempts 
+
+def update_question_attempt_scoring(db: Session, question_attempt_id: uuid.UUID, scored: bool, manual_credit: bool, user_id: uuid.UUID):
+    question_attempt = get_question_attempt_by_id(db, question_attempt_id, user_id)
+    question_attempt.scored = scored
+    question_attempt.manual_credit = manual_credit
+    db.commit()
+    return question_attempt

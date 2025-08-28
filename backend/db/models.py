@@ -149,3 +149,48 @@ class Question(Base):
         index=True,
     )
     topic: Mapped["Topic"] = relationship(back_populates="questions")
+
+class ExamAttempt(Base):
+    __table_name__ = "exam_attempts"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    exam_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("exams.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    completed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), default=datetime.now(timezone.utc)
+    )
+    scored_questions: Mapped[int | None] = mapped_column(nullable=True)
+    score: Mapped[int | None] = mapped_column(nullable=True)
+    exam: Mapped["Exam"] = relationship(back_populates="attempts")
+
+class QuestionAttempt(Base):
+    __tablename__ = "question_attempts"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    exam_attempt_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("exam_attempts.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    question_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("questions.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    selected_option: Mapped[str | None] = mapped_column(String(1), nullable=True)
+    is_correct: Mapped[bool] = mapped_column(nullable=False, default=False)
+    scored: Mapped[bool] = mapped_column(nullable=False, default=True)
+    manual_credit: Mapped[bool] = mapped_column(nullable=False, default=False)
+
+    exam_attempt: Mapped["ExamAttempt"] = relationship(back_populates="question_attempts")
+    question: Mapped["Question"] = relationship(back_populates="attempts")
