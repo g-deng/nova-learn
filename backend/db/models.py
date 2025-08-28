@@ -167,6 +167,7 @@ class ExamAttempt(Base):
     )
     scored_questions: Mapped[int | None] = mapped_column(nullable=True)
     score: Mapped[int | None] = mapped_column(nullable=True)
+
     exam: Mapped["Exam"] = relationship(back_populates="attempts")
 
 class QuestionAttempt(Base):
@@ -188,7 +189,7 @@ class QuestionAttempt(Base):
         index=True,
     )
     selected_option: Mapped[str | None] = mapped_column(String(1), nullable=True)
-    is_correct: Mapped[bool] = mapped_column(nullable=False, default=False)
+    is_correct: Mapped[bool] = mapped_column(nullable=False)
     scored: Mapped[bool] = mapped_column(nullable=False, default=True)
     manual_credit: Mapped[bool] = mapped_column(nullable=False, default=False)
 

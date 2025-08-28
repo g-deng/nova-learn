@@ -324,6 +324,10 @@ def get_exam_attempt_by_id(db: Session, attempt_id: uuid.UUID, user_id: uuid.UUI
     get_exam_by_id(db, exam_attempt.exam_id, user_id)
     return exam_attempt
 
+def get_exam_attempts(db: Session, exam_id: uuid.UUID, user_id: uuid.UUID):
+    get_exam_by_id(db, exam_id, user_id)
+    return db.query(ExamAttempt).filter(ExamAttempt.exam_id == exam_id).all()
+
 def score_exam_attempt(db: Session, attempt_id: uuid.UUID, user_id: uuid.UUID):
     exam_attempt = get_exam_attempt_by_id(db, attempt_id, user_id)
     question_attempts = get_question_attempts_by_exam(db, exam_attempt.exam_id, user_id)

@@ -90,3 +90,23 @@ class ExamInfoSchema(BaseModel):
 
     class Config:
         orm_mode = True
+
+
+class ExamAttemptSchema(BaseModel):
+    id: uuid.UUID
+    exam_id: uuid.UUID
+    completed_at: datetime
+    scored_questions: Optional[int] = None
+    score: Optional[int] = None
+
+    class Config:
+        orm_mode = True
+
+class QuestionAttemptSchema(BaseModel):
+    id: uuid.UUID
+    exam_attempt_id: uuid.UUID
+    question_id: uuid.UUID
+    selected_option: Optional[str] = None
+    is_correct: bool
+    scored: bool = True
+    manual_credit: bool = False
