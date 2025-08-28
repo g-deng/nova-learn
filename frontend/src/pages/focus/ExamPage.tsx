@@ -53,11 +53,11 @@ export default function ExamPage() {
 
   return (
     <div className="h-full p-4">
-      <h2 className="text-lg font-medium">
-        <Button onClick={() => navigate(`/stack/${stackId}/exams`)}>Back to Exams</Button> 
-        {examName}
-      </h2>
-      <div className="h-full flex flex-col items-center justify-center">
+      <div className="flex items-center justify-between pb-4">
+        <h2 className="text-lg font-medium"> {examName}</h2>
+        <Button variant="outline" onClick={() => navigate(`/stack/${stackId}/exams`)}>Back to Exams</Button>
+      </div>
+      <div className="max-h-3/5 overflow-y-auto">
         {questions.length > 0 && (
           <ExamForm questions={questions} />
         )}
@@ -102,7 +102,7 @@ function ExamForm({ questions }: ExamFormProps) {
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           {questions.map((q, idx) => (
             <Card key={q.id} className="shadow-md rounded-xl">
-              <CardContent className="p-6 space-y-4">
+              <CardContent className="p-6=">
                 <FormField
                   control={form.control}
                   name={q.id}

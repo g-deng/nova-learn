@@ -16,27 +16,19 @@ import { useNavigate, useOutletContext, Outlet } from "react-router-dom";
 import { useEffect, useState } from "react";
 import GraphViewer from "@/components/graph-viewer";
 
-export default function FocusPage() {
+export default function FocusLayout() {
   const [topics, setTopics] = useState<Node[]>([]);
   const [dependencies, setDependencies] = useState<Link[]>([]);
   const stackId = useOutletContext<string>();
   const navigate = useNavigate();
 
-  const token = localStorage.getItem("authToken");
-  if (!token) {
-    navigate("/login");
-    return;
-  }
-
   const fetchTopicData = async () => {
     try {
       const topicsResult = await api.get(`/stacks/${stackId}/topics`);
-      console.log("topics:", topicsResult.data);
       const parsedTopics = topicsResult.data.map((t: any) => {
         return { id: t.id, name: t.name } as Node;
       });
       setTopics(parsedTopics);
-      console.log("topics state set:", topics);
     } catch (error) {
       console.error("Failed to fetch topics:", error);
     }
@@ -45,21 +37,20 @@ export default function FocusPage() {
   const fetchDependencyData = async () => {
     try {
       const dependencyResult = await api.get(`/stacks/${stackId}/dependencies`);
-      console.log("dependencies:", dependencyResult.data);
       const parsedDeps = dependencyResult.data.map((d: any) => {
         return { source: d.from_topic_id, target: d.to_topic_id } as Link;
       });
       setDependencies(parsedDeps);
-      console.log("dependencies state set:", dependencies);
     } catch (error) {
       console.error("Failed to fetch dependencies:", error);
     }
   }
 
   useEffect(() => {
+    console.log("Rerender Focus Layout with stackId: ", stackId);
     fetchTopicData();
     fetchDependencyData();
-  }, [navigate, token])
+  }, [stackId])
 
   return (
     <ResizablePanelGroup direction="horizontal" className="w-full h-full pt-4">

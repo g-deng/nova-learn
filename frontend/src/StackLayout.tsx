@@ -16,7 +16,7 @@ export default function StackLayout() {
     const fetchStackData = async () => {
       try {
         const stackResult = await api.get(`/stacks/${stackId}`);
-        console.log("stack:", stackResult.data);
+        // console.log("stack:", stackResult.data);
         setStack(stackResult.data);
       } catch (error) {
         console.error("Failed to fetch stack info:", error);
