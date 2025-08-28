@@ -10,12 +10,11 @@ import {
   TabsList,
   TabsTrigger
 } from "@/components/ui/tabs"
-import GraphViewer from "@/components/graph-viewer";
 import type { Node, Link } from "@/components/graph-viewer";
-import FlashcardViewer from "@/components/flashcard-viewer";
-import axios from "axios";
-import { useNavigate, useOutletContext } from "react-router-dom";
+import api from "@/lib/api";
+import { useNavigate, useOutletContext, Outlet } from "react-router-dom";
 import { useEffect, useState } from "react";
+import GraphViewer from "@/components/graph-viewer";
 
 export default function FocusPage() {
   const [topics, setTopics] = useState<Node[]>([]);
@@ -31,14 +30,7 @@ export default function FocusPage() {
 
   const fetchTopicData = async () => {
     try {
-      const topicsResult = await axios.get(
-        `${import.meta.env.VITE_BACKEND_URL}/stacks/${stackId}/topics`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const topicsResult = await api.get(`/stacks/${stackId}/topics`);
       console.log("topics:", topicsResult.data);
       const parsedTopics = topicsResult.data.map((t: any) => {
         return { id: t.id, name: t.name } as Node;
@@ -47,24 +39,12 @@ export default function FocusPage() {
       console.log("topics state set:", topics);
     } catch (error) {
       console.error("Failed to fetch topics:", error);
-      if (axios.isAxiosError(error)) {
-        if (error.response?.status === 401) {
-          navigate("/login");
-        }
-      }
     }
   }
 
   const fetchDependencyData = async () => {
     try {
-      const dependencyResult = await axios.get(
-        `${import.meta.env.VITE_BACKEND_URL}/stacks/${stackId}/dependencies`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const dependencyResult = await api.get(`/stacks/${stackId}/dependencies`);
       console.log("dependencies:", dependencyResult.data);
       const parsedDeps = dependencyResult.data.map((d: any) => {
         return { source: d.from_topic_id, target: d.to_topic_id } as Link;
@@ -73,11 +53,6 @@ export default function FocusPage() {
       console.log("dependencies state set:", dependencies);
     } catch (error) {
       console.error("Failed to fetch dependencies:", error);
-      if (axios.isAxiosError(error)) {
-        if (error.response?.status === 401) {
-          navigate("/login");
-        }
-      }
     }
   }
 
@@ -120,20 +95,7 @@ export default function FocusPage() {
       </ResizablePanel>
       <ResizableHandle />
       <ResizablePanel>
-        <Tabs defaultValue="stats" className="w-full h-full">
-          <TabsList>
-            <TabsTrigger value="stats">Stats</TabsTrigger>
-            <TabsTrigger value="learn">Chat</TabsTrigger>
-            <TabsTrigger value="study">Flashcards</TabsTrigger>
-            <TabsTrigger value="review">Exams</TabsTrigger>
-          </TabsList>
-          <TabsContent value="stats">Stats</TabsContent>
-          <TabsContent value="learn">Learn</TabsContent>
-          <TabsContent value="study">
-            <FlashcardViewer/>
-          </TabsContent>
-          <TabsContent value="review">Review</TabsContent>
-        </Tabs>
+        <Outlet context={useOutletContext<string>()}/>
       </ResizablePanel>
       
     </ResizablePanelGroup>

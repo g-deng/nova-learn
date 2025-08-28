@@ -1,7 +1,7 @@
 import { Outlet, useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import axios from "axios";
+import api from "@/lib/api";
 
 export default function StackLayout() {
   const { stackId } = useParams<{ stackId: string }>();
@@ -13,36 +13,16 @@ export default function StackLayout() {
 
 
   useEffect(() => {
-    const token = localStorage.getItem("authToken");
-    if (!token) {
-      navigate("/login");
-      return;
-    }
-
     const fetchStackData = async () => {
       try {
-        const stackResult = await axios.get(
-          `${import.meta.env.VITE_BACKEND_URL}/stacks/${stackId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const stackResult = await api.get(`/stacks/${stackId}`);
         console.log("stack:", stackResult.data);
         setStack(stackResult.data);
       } catch (error) {
         console.error("Failed to fetch stack info:", error);
-        if (axios.isAxiosError(error)) {
-          if (error.response?.status === 401) {
-            navigate("/login");
-          }
-        }
       }
     }
-
     fetchStackData();
-
   }, [navigate, stackId]);
 
   return (
