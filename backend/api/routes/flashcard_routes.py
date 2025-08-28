@@ -4,13 +4,8 @@ from fastapi import APIRouter
 from api.auth import get_current_user
 from db import crud
 from db.database import get_db
-from db.schemas import (
-    FlashcardSchema,
-    StudyStackSchema,
-    TopicSchema,
-    TopicDependencySchema
-)
-from api.llm import extract_topics, infer_topic_dependencies, extract_flashcards
+from db.schemas import FlashcardSchema
+from api.llm import extract_flashcards
 from fastapi import Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel

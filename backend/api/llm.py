@@ -5,6 +5,7 @@ from typing import List
 
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 model = "z-ai/glm-4.5-air:free" # "google/gemini-2.0-flash-exp:free" #  # "openai/gpt-3.5-turbo" "openai/gpt-oss-20b:free"
+temperature = 0.2
 
 async def extract_topics(subject: str, description: str | None, avoid_topics: List[str] = []) -> dict:
     prompt = (
@@ -26,7 +27,7 @@ async def extract_topics(subject: str, description: str | None, avoid_topics: Li
         "messages": [
             {"role": "user", "content": prompt}
         ],
-        "temperature": 0.2
+        "temperature": temperature
     }
 
     async with httpx.AsyncClient() as client:
@@ -69,7 +70,7 @@ async def infer_topic_dependencies(topics: List[str]) -> List[List[str]]:
         "messages": [
             {"role": "user", "content": prompt}
         ],
-        "temperature": 0.2
+        "temperature": temperature
     }
 
     print("Attempting to infer dependencies:")
@@ -111,7 +112,7 @@ async def extract_flashcards(topic: str, num_cards: int = 10, prompt: str | None
         "messages": [
             {"role": "user", "content": prompt}
         ],
-        "temperature": 0.2
+        "temperature": temperature
     }
 
     print("Attempting to extract flashcards:")
@@ -136,6 +137,56 @@ async def extract_flashcards(topic: str, num_cards: int = 10, prompt: str | None
         print(cards)
         if isinstance(cards, list) and all(isinstance(card, dict) for card in cards):
             return cards
+        else:
+            raise ValueError("Unexpected format")
+    except Exception as e:
+        print("Error parsing response:", e)
+        return []
+
+
+async def create_multiple_choice_exam(title: str, topics: List[str], num_questions: int = 10, prompt: str | None = None) -> List[dict]:
+    prompt = (
+        "Generate the questions for a multiple-choice exam titled '" + title + "' with " + str(num_questions) + " questions covering the following topics:\n\n"
+        f"Topics: {topics}\n\n"
+        "Each question should have 4 answer choices labeled 'A', 'B', 'C', and 'D', with one correct answer. "
+        "Format your output as a JSON array of objects with 'text', 'choices' (a dict of options), and 'answer' (the correct option letter). "
+        "Do not include any extra text outside the JSON array."
+    )
+
+    headers = {
+        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+    }
+
+    payload = {
+        "model": model,
+        "messages": [
+            {"role": "user", "content": prompt}
+        ],
+        "temperature": temperature
+    }
+
+    print("Attempting to create exam:")
+
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            "https://openrouter.ai/api/v1/chat/completions",
+            json=payload,
+            headers=headers
+        )
+
+    try:
+        content = response.json()["choices"][0]["message"]["content"]
+        if not content.startswith("[") or not content.endswith("]"):
+            start = content.find("[")
+            end = content.rfind("]")
+            if start == -1 or end == -1:
+                raise ValueError("Invalid JSON format")
+            content = content[start:end + 1]
+        questions = json.loads(content)
+        print("Questions")
+        print(questions)
+        if isinstance(questions, list) and all(isinstance(q, dict) for q in questions):
+            return questions
         else:
             raise ValueError("Unexpected format")
     except Exception as e:

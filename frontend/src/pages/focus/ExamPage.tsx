@@ -31,27 +31,42 @@ type Question = {
 
 
 export default function ExamPage() {
+  const [examName, setExamName] = useState("");
   const [questions, setQuestions] = useState<Question[]>([]);
   const navigate = useNavigate();
   const { examId } = useParams<{ examId: string }>();
   const stackId = useOutletContext<string>();
 
   useEffect(() => {
-    const fetchQuestions = async () => {
+    const fetchExamInfo = async () => {
       try {
         const response = await api.get(`/exams/${examId}/questions`);
         setQuestions(response.data);
+        const examResponse = await api.get(`/exams/${examId}`);
+        setExamName(examResponse.data.name);
       } catch (error) {
         console.error("Failed to fetch questions:", error);
       }
     };
-    fetchQuestions();
+    fetchExamInfo();
   }, [examId]);
 
   return (
-    <div>
-      <Button onClick={() => navigate(`/stacks/${stackId}/exams`)}>Back</Button>
-      <ExamForm questions={questions} />
+    <div className="h-full p-4">
+      <h2 className="text-lg font-medium">
+        <Button onClick={() => navigate(`/stack/${stackId}/exams`)}>Back to Exams</Button> 
+        {examName}
+      </h2>
+      <div className="h-full flex flex-col items-center justify-center">
+        {questions.length > 0 && (
+          <ExamForm questions={questions} />
+        )}
+        {questions.length === 0 && (
+          <div className="p-4 text-center font-medium">
+            Exam does not exist or has no questions.
+          </div>
+        )}
+      </div>
     </div>
   );
 

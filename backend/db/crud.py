@@ -275,6 +275,12 @@ def create_exam(db: Session, stack_id: uuid.UUID, name: str, user_id: uuid.UUID)
     db.commit()
     return exam
 
+def get_exams_by_stack(db: Session, stack_id: uuid.UUID, user_id: uuid.UUID):
+    stack = db.query(StudyStack).filter(StudyStack.id == stack_id, StudyStack.user_id == user_id).first()
+    if not stack:
+        raise ValueError("Study stack not found or does not belong to user")
+    return db.query(Exam).filter(Exam.stack_id == stack_id).all()
+
 def get_exam(db: Session, exam_id: uuid.UUID, user_id: uuid.UUID):
     exam = db.query(Exam).filter(Exam.id == exam_id, Exam.stack.user_id == user_id).first()
     if not exam:

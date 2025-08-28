@@ -56,3 +56,23 @@ class UserSchema(BaseModel):
 
     class Config:
         orm_mode = True
+
+class QuestionSchema(BaseModel):
+    id: uuid.UUID
+    exam_id: uuid.UUID
+    text: str
+    choices: List[str]
+    answer: str
+
+    class Config:
+        orm_mode = True
+
+class ExamSchema(BaseModel):
+    id: uuid.UUID
+    stack_id: uuid.UUID
+    title: str
+    created_at: datetime
+    questions: List[QuestionSchema] = []
+
+    class Config:
+        orm_mode = True

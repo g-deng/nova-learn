@@ -28,7 +28,7 @@ function App() {
               <Route path="flashcards" element={<FlashcardPage />} />
               {/* <Route path="chat" element={<ChatPage />} /> */}
               <Route path="exams" element={<ExamListPage />} />
-              <Route path="exam/:examId" element={<ExamPage />} />
+              <Route path="exams/:examId" element={<ExamPage />} />
               {/* <Route path="stats" element={<StatisticsPage />} /> */}
             </Route>
             <Route path=":stackId/edit-topics" element={<AddTopicsPage />}/>
