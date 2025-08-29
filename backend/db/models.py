@@ -118,7 +118,7 @@ class Exam(Base):
         back_populates="exam", cascade="all, delete-orphan"
     )
     exam_attempts: Mapped[List["ExamAttempt"]] = relationship(
-        back_populates="exam"
+        back_populates="exam", cascade="all, delete-orphan"
     )
 
 

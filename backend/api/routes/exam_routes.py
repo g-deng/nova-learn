@@ -4,7 +4,7 @@ from fastapi import APIRouter
 from api.auth import get_current_user
 from db import crud
 from db.database import get_db
-from db.schemas import ExamAttemptSchema, ExamSchema, ExamInfoSchema, QuestionSchema
+from db.schemas import ExamAttemptSchema, ExamSchema, ExamInfoSchema, QuestionAttemptSchema, QuestionSchema
 from api.llm import create_multiple_choice_exam
 from fastapi import Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -61,7 +61,10 @@ async def get_exam_questions(exam_id: uuid.UUID, user = Depends(get_current_user
 
 @router.post("/{exam_id}/delete", response_model=bool)
 async def delete_exam(exam_id: uuid.UUID, user = Depends(get_current_user), db: Session = Depends(get_db)):
-    return crud.delete_exam(db, exam_id, user.id)
+    try:
+        return crud.delete_exam(db, exam_id, user.id)
+    except ValueError:
+        raise HTTPException(status_code=500, detail="Exam could not be deleted")
 
 @router.post("/question/{question_id}/delete", response_model=bool)
 async def delete_question(question_id: uuid.UUID, user = Depends(get_current_user), db: Session = Depends(get_db)):
@@ -96,3 +99,11 @@ async def get_exam_attempts(exam_id: uuid.UUID, user = Depends(get_current_user)
         return attempts
     except ValueError:
         raise HTTPException(status_code=404, detail="Exam not found")
+
+@router.get("/{exam_id}/attempt/{attempt_id}/questions", response_model=List[QuestionAttemptSchema])
+async def get_exam_question_attempts(exam_id: uuid.UUID, attempt_id: uuid.UUID, user = Depends(get_current_user), db: Session = Depends(get_db)):
+    try:
+        question_attempts = crud.get_question_attempts_by_exam(db, exam_id, user.id)
+        return question_attempts
+    except ValueError:
+        raise HTTPException(status_code=404, detail="Exam attempt not found")

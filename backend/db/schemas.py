@@ -102,6 +102,7 @@ class ExamAttemptSchema(BaseModel):
     class Config:
         orm_mode = True
 
+
 class QuestionAttemptSchema(BaseModel):
     id: uuid.UUID
     exam_attempt_id: uuid.UUID

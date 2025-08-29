@@ -50,6 +50,7 @@ export default function ExamPage() {
     fetchExamInfo();
   }, [examId]);
 
+
   return (
     <div className="h-full p-4">
       <div className="flex items-center justify-between pb-4">
@@ -58,7 +59,7 @@ export default function ExamPage() {
       </div>
       <div className="max-h-3/5 overflow-y-auto">
         {questions.length > 0 && (
-          <ExamForm questions={questions} />
+          <ExamForm questions={questions} examId={examId} stackId={stackId} />
         )}
         {questions.length === 0 && (
           <div className="p-4 text-center font-medium">
@@ -72,10 +73,13 @@ export default function ExamPage() {
 }
 
 type ExamFormProps = {
-  questions: Question[]
+  questions: Question[];
+  examId: string | undefined;
+  stackId: string
 }
 
-function ExamForm({ questions }: ExamFormProps) {
+function ExamForm({ questions, examId, stackId }: ExamFormProps) {
+  const navigate = useNavigate();
   const schema = z.object(
     Object.fromEntries(questions.map((q) => [q.id, z.string().nonempty("Pick an option")]))
   );
@@ -85,14 +89,20 @@ function ExamForm({ questions }: ExamFormProps) {
     defaultValues: Object.fromEntries(questions.map((q) => [q.id, ""])),
   });
 
-  const [score, setScore] = useState<number | null>(null)
 
-  function onSubmit(values: z.infer<typeof schema>) {
-    let correct = 0
-    questions.forEach((q) => {
-      if (values[q.id] === q.answer) correct++
-    });
-    setScore(correct)
+  const onSubmit = async (values: z.infer<typeof schema>) => {
+    try {
+      const response = await api.post(`/exams/${examId}/upload_attempt`, {
+        question_attempts: questions.map((q) => ({
+          question_id: q.id,
+          selected_option: values[q.id],
+        })),
+      });
+      console.log("Attempt submitted successfully:", response.data);
+      navigate(`/stack/${stackId}/exams/${examId}#${response.data.id}`);
+    } catch (error) {
+      console.error("Failed to submit attempt:", error);
+    }
   }
 
   return (
@@ -147,12 +157,6 @@ function ExamForm({ questions }: ExamFormProps) {
           </Button>
         </form>
       </Form>
-
-      {score !== null && (
-        <div className="p-4 bg-muted rounded-lg text-center font-medium">
-          You scored {score} / {questions.length}
-        </div>
-      )}
     </div>
   )
 }
