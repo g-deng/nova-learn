@@ -22,20 +22,33 @@ import {
   CommandInput,
   CommandItem,
 } from "@/components/ui/command"
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover"
 import { Badge } from "@/components/ui/badge"
-import { Check } from "lucide-react"
+import { Check, Filter } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { ExamInfo } from "./ExamInfoPage";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Loader2 } from "lucide-react";
 
 export default function ExamListPage() {
   const [exams, setExams] = useState<ExamInfo[]>([]);
+  const [filteredExams, setFilteredExams] = useState<ExamInfo[]>([]);
+  const [topicFilter, setTopicFilter] = useState<string[]>([]);
+  const [loadingExams, setLoadingExams] = useState(false);
   const [openCreator, setOpenCreator] = useState(false);
   const stackId = useOutletContext<string>();
-  const navigate = useNavigate();
+
+  useEffect(() => {
+    setFilteredExams(exams.filter(exam => {
+      if (topicFilter.length === 0) return true;
+      return topicFilter.every(topic => exam.topics.includes(topic));
+    }));
+  }, [exams, topicFilter]);
 
   useEffect(() => {
     const getExams = async () => {
       try {
+        setLoadingExams(true);
         const response = await api.get(`/exams/${stackId}/list`);
         setExams(response.data.map((examInfo: any) => {
           return {
@@ -53,6 +66,8 @@ export default function ExamListPage() {
         console.log(response.data);
       } catch (error) {
         console.error("Error fetching exams:", error);
+      } finally {
+        setLoadingExams(false);
       }
     }
     getExams();
@@ -62,18 +77,29 @@ export default function ExamListPage() {
     <div className="h-full p-4">
       <div className="flex justify-between items-center pb-4">
         <h2 className="text-lg font-bold">Exams</h2>
-        <ExamCreator open={openCreator} setOpen={setOpenCreator} />
+        <div className="flex gap-2">
+          <TopicFilter topicFilter={topicFilter} setTopicFilter={setTopicFilter} />
+          <ExamCreator open={openCreator} setOpen={setOpenCreator} />
+        </div>
       </div>
-      {exams.length === 0 &&
+      {!loadingExams && filteredExams.length === 0 &&
         <div>
           <p>No exams found</p>
         </div>
       }
-      <div className="grid grid-cols-1 gap-4 overflow-y-auto">
-        {exams.map((exam) => (
-          <ExamLine key={exam.id} {...exam} />
-        ))}
-      </div>
+      {loadingExams ? (
+        <div className="grid grid-cols-1 gap-4 overflow-y-auto">
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-32 w-full" />
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-4 overflow-y-auto">
+          {filteredExams.map((exam) => (
+            <ExamLine key={exam.id} {...exam} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -105,7 +131,7 @@ function ExamLine({ id, name, topics, createdAt, bestAttempt }: ExamInfo) {
           <Button className="h-6" variant="outline" onClick={() => navigate(`${id}`)}>View Exam</Button>
           <Button className="h-6" onClick={() => navigate(`${id}/take`)}>Take Exam</Button>
         </div>
-        {bestAttempt && <Badge>Best: {bestAttempt.score} / {bestAttempt.scoredQuestions}</Badge>}
+        {bestAttempt?.score && <Badge>Best: {bestAttempt.score} / {bestAttempt.scoredQuestions}</Badge>}
       </CardContent>
     </Card>
   )
@@ -142,7 +168,7 @@ function ExamCreator({ open, setOpen }: { open: boolean, setOpen: (open: boolean
   const handleSubmit = async () => {
     try {
       setGenerating(true);
-      const response = await api.post(`/exams/${stackId}/generate`, {
+      await api.post(`/exams/${stackId}/generate`, {
         title,
         topics: selectedTopics,
         num_questions: numQuestions[0],
@@ -171,18 +197,21 @@ function ExamCreator({ open, setOpen }: { open: boolean, setOpen: (open: boolean
 
         {/* Title */}
         <div className="space-y-2">
-          <Label htmlFor="title">Title</Label>
+          <Label htmlFor="title">Title<span className="text-red-500">*</span></Label>
           <Input
             id="title"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Enter exam title"
+            required
           />
         </div>
 
         {/* Topics multiselect */}
         <div className="space-y-2">
-          <Label>Topics</Label>
+          <Label>
+            Topics<span className="text-red-500">*</span>
+          </Label>
           <div className="flex flex-row justify-between">
             <p className="text-sm text-muted-foreground">
               Selected:{" "}
@@ -190,7 +219,16 @@ function ExamCreator({ open, setOpen }: { open: boolean, setOpen: (open: boolean
                 ? selectedTopics.join(", ")
                 : "None"}
             </p>
-            <p className="text-sm text-muted-foreground underline cursor-pointer" onClick={() => setSelectedTopics([])}>Deselect All</p>
+            {selectedTopics.length > 0 && <p
+              className="text-sm text-muted-foreground underline cursor-pointer"
+              onClick={() => setSelectedTopics([])}>
+              Deselect All
+            </p>}
+            {selectedTopics.length === 0 && <p
+              className="text-sm text-muted-foreground underline cursor-pointer"
+              onClick={() => setSelectedTopics(topics)}>
+              Select All
+            </p>}
           </div>
           <Command>
             <CommandInput placeholder="Search topics..." />
@@ -241,9 +279,115 @@ function ExamCreator({ open, setOpen }: { open: boolean, setOpen: (open: boolean
         </div>
 
         <DialogFooter>
-          <Button disabled={generating} onClick={handleSubmit}>Create</Button>
+          <Button
+            disabled={
+              generating ||
+              title.trim() === "" ||
+              selectedTopics.length === 0
+            }
+            onClick={handleSubmit}
+          >
+            {generating ? <Loader2 className="mr-2 animate-spin" /> : null}
+            Create
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   )
 }
+
+
+export function TopicFilter({
+  topicFilter,
+  setTopicFilter,
+}: {
+  topicFilter: string[]
+  setTopicFilter: (topics: string[]) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const [topics, setTopics] = useState<string[]>([])
+  const stackId = useOutletContext<string>()
+
+  useEffect(() => {
+    const getTopics = async () => {
+      try {
+        const response = await api.get(`/stacks/${stackId}/topics`)
+        setTopics(response.data.map((t: { name: string }) => t.name))
+      } catch (error) {
+        console.error("Error fetching topics:", error)
+      }
+    }
+    getTopics()
+  }, [stackId])
+
+  const toggleTopic = (topic: string) => {
+    setTopicFilter(
+      topicFilter.includes(topic)
+        ? topicFilter.filter((t) => t !== topic)
+        : [...topicFilter, topic]
+    )
+  }
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          size="sm"
+          className="flex items-center gap-2"
+        >
+          <Filter className="h-4 w-4" />
+          {topicFilter.length > 0 ? `${topicFilter.length} selected` : "Filter"}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-56 p-0">
+        <Command>
+          <CommandInput placeholder="Search topics..." />
+          <CommandEmpty>No topics found.</CommandEmpty>
+          <CommandGroup className="max-h-48 overflow-y-auto">
+            {topics.map((topic) => (
+              <CommandItem
+                key={topic}
+                onSelect={() => toggleTopic(topic)}
+                className="flex items-center gap-2"
+              >
+                <Check
+                  className={cn(
+                    "h-4 w-4",
+                    topicFilter.includes(topic)
+                      ? "opacity-100"
+                      : "opacity-0"
+                  )}
+                />
+                {topic}
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        </Command>
+        {topicFilter.length > 0 && (
+          <div className="flex flex-wrap gap-1 border-t p-2">
+            {topicFilter.map((topic) => (
+              <Badge
+                key={topic}
+                variant="secondary"
+                className="cursor-pointer"
+                onClick={() => toggleTopic(topic)}
+              >
+                {topic} ✕
+              </Badge>
+            ))}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="ml-auto text-xs"
+              onClick={() => setTopicFilter([])}
+            >
+              Clear
+            </Button>
+          </div>
+        )}
+      </PopoverContent>
+    </Popover>
+  )
+}
+

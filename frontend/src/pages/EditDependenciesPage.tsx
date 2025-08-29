@@ -23,7 +23,7 @@ export default function AddDependenciesPage() {
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState<{ from: string, to: string, fromId: string | null, toId: string | null }[]>([]);
   const [unsavedChanges, setUnsavedChanges] = useState(false);
-  
+
   useEffect(() => {
     const handler = (e: BeforeUnloadEvent) => {
       if (unsavedChanges) {
@@ -35,7 +35,7 @@ export default function AddDependenciesPage() {
     return () => window.removeEventListener("beforeunload", handler);
   }, [unsavedChanges]);
 
-  
+
   useEffect(() => {
     setUnsavedChanges(
       JSON.stringify(dependencies) !== JSON.stringify(saved));
@@ -140,7 +140,7 @@ export default function AddDependenciesPage() {
         {
           new_dependencies: dependencies.filter(dep => !dep.fromId).map((dep) => [dep.from, dep.to]),
           old_dependencies: saved.reduce((acc, dep) => {
-            if (dep.fromId && dep.toId) acc[dep.fromId + "," + dep.toId] = [dep.from, dep.to]; 
+            if (dep.fromId && dep.toId) acc[dep.fromId + "," + dep.toId] = [dep.from, dep.to];
             return acc;
           }, {} as Record<string, [string, string]>),
           deleted_dependencies: saved.filter(dep => dep.fromId && !dependencies.some(d => d.fromId == dep.fromId && d.toId == dep.toId)).map(dep => [dep.fromId, dep.toId]),
@@ -189,51 +189,56 @@ export default function AddDependenciesPage() {
   }
 
   return (
-    <div className="h-full w-full overflow-auto">
-      <div className="flex-1 flex flex-row">
-        <div className="flex-none min-w-[500px] p-2">
-          <h2 className="text-xl font-bold"> Edit Dependencies</h2>
-          <div className="flex flex-col gap-4 pb-4">
-            {dependencies && dependencies.map((dep, index) => (
-              <DependencyLine
-                key={dep.from + dep.to + index}
-                dependency={dep} index={index}
-                topics={topics} editToTopic={editToTopic}
-                editFromTopic={editFromTopic}
-                deleteDependency={deleteDependency} />
-            ))}
-            {loading &&
-              Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="flex items-center justify-between gap-6">
-                  <Skeleton className="h-20 flex-1" />
-                </div>
-              ))
-            }
-            <Button
-              onClick={newDependency}
-              variant="outline"
-              disabled={(dependencies.length > 0 && (dependencies[dependencies.length - 1].from === '' || dependencies[dependencies.length - 1].to === '')) || undefined}
-            >New Dependency
-            </Button>
-          </div>
-          <div className="flex items-center gap-4 pb-4">
-            <Button onClick={generateDependencies} disabled={loading || unsavedChanges}>Generate Dependencies</Button>
-            <Button onClick={submitDependencies} disabled={loading || !unsavedChanges}>Save Dependencies</Button>
+    <div className="h-full w-full flex border border-red-500">
+      {/* Dependency List */}
+      <div className="flex flex-col h-full min-w-[500px] p-2">
+        <h2 className="text-xl font-bold"> Edit Dependencies</h2>
+
+        <div className="flex flex-col gap-2 pb-2 overflow-y-auto">
+          {dependencies && dependencies.map((dep, index) => (
+            <DependencyLine
+              key={dep.from + dep.to + index}
+              dependency={dep} index={index}
+              topics={topics} editToTopic={editToTopic}
+              editFromTopic={editFromTopic}
+              deleteDependency={deleteDependency} />
+          ))}
+          {loading &&
+            Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="flex items-center justify-between gap-6">
+                <Skeleton className="h-20 flex-1" />
+              </div>
+            ))
+          }
+        </div>
+        {/* Footer */}
+        <div className="flex flex-col items-stretch justify-center gap-4 py-2">
+          <Button
+            onClick={newDependency}
+            variant="outline"
+            disabled={(dependencies.length > 0 && (dependencies[dependencies.length - 1].from === '' || dependencies[dependencies.length - 1].to === '')) || undefined}
+          >New Dependency
+          </Button>
+          <div className="w-full flex items-center justify-stretch gap-4">
+            <Button className="grow" onClick={generateDependencies} disabled={loading || unsavedChanges}>Generate Dependencies</Button>
+            <Button className="grow" onClick={submitDependencies} disabled={loading || !unsavedChanges}>Save Dependencies</Button>
           </div>
         </div>
-        <div className="flex-1 h-full pb-4 flex flex-col border border-red-500">
-          <h2 className="text-xl font-bold">Dependency Graph</h2>
-          <p className="text-sm text-gray-500 pb-2">Only shows saved dependencies.</p>
-          <GraphViewer
-            nodes={topics}
-            links={dependencies.filter(dep => dep.fromId && dep.toId).map(dep => ({
-              source: dep.fromId,
-              target: dep.toId,
-            } as Link))}
-            onNodeClick={() => { }}
-            onLinkClick={() => { }}
-          />
-        </div>
+      </div>
+
+      {/* Dependency Graph */}
+      <div className="flex-1 h-full pb-4 flex flex-col border border-red-500">
+        <h2 className="text-xl font-bold">Dependency Graph</h2>
+        <p className="text-sm text-gray-500 pb-2">Only shows saved dependencies.</p>
+        <GraphViewer
+          nodes={topics}
+          links={dependencies.filter(dep => dep.fromId && dep.toId).map(dep => ({
+            source: dep.fromId,
+            target: dep.toId,
+          } as Link))}
+          onNodeClick={() => { }}
+          onLinkClick={() => { }}
+        />
       </div>
     </div>
   )
@@ -249,7 +254,7 @@ export function DependencyLine({ dependency, index, topics, editFromTopic, editT
 }) {
   const [touched, setTouched] = useState(false);
   return (
-    <div className="flex-row items-start" onFocus={() => setTouched(true)} onBlur={() => setTouched(false)}>
+    <div className="flex flex-row items-start" onFocus={() => setTouched(true)} onBlur={() => setTouched(false)}>
       <div className={"flex items-center justify-between p-2 gap-6 border-b "}>
         <Select onValueChange={(newVal) => editFromTopic(index, newVal)} >
           <SelectTrigger className={"w-[180px] " + (dependency.fromId ? "bg-gray-200" : "")}>
@@ -257,7 +262,7 @@ export function DependencyLine({ dependency, index, topics, editFromTopic, editT
           </SelectTrigger>
           <SelectContent>
             {topics.map((topic) => (
-              <SelectItem key={topic.id} value={topic.name || ''}>{topic.name}</SelectItem>
+              <SelectItem key={`${topic.id}-${index}`} value={topic.name || ''}>{topic.name}</SelectItem>
             ))}
           </SelectContent>
         </Select>

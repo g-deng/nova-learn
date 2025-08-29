@@ -49,40 +49,71 @@ export default function GraphViewer({ nodes, links, onNodeClick, onLinkClick }: 
   return (
     <div ref={containerRef} className="h-full w-full overflow-hidden border border-gray-300">
       {dimensions.width > 0 && dimensions.height > 0 &&
-        <ForceGraph2D
-          ref={fgRef}
-          width={dimensions.width}
-          height={dimensions.height}
-          d3VelocityDecay={0.6}
-          graphData={{ nodes, links }}
-          nodeLabel="name"
-          nodeCanvasObject={(node, ctx, globalScale) => {
-            const label = node.name as string;
-            const radius = 10 / globalScale;
-            const labelPadding = 16 / globalScale;
-            const fontSize = 16 / globalScale;
+      <ForceGraph2D
+        ref={fgRef}
+        width={dimensions.width}
+        height={dimensions.height}
+        d3VelocityDecay={0.6}
+        graphData={{ nodes, links }}
+        nodeLabel="name"
+        nodeCanvasObject={(node, ctx, globalScale) => {
+        const label = node.name as string;
+        const radius = 10 / globalScale;
+        const labelPadding = 16 / globalScale;
+        const fontSize = 16 / globalScale;
 
-            ctx.beginPath();
-            ctx.arc(node.x!, node.y!, radius, 0, 2 * Math.PI, false);
-            ctx.fillStyle = (location.hash.substring(1) == node.id) ? 'lightblue' : 'lightgray';
-            ctx.fill();
+        ctx.beginPath();
+        ctx.arc(node.x!, node.y!, radius, 0, 2 * Math.PI, false);
+        ctx.fillStyle = (location.hash.substring(1) == node.id) ? 'lightblue' : 'lightgray';
+        ctx.fill();
 
-            ctx.font = `${fontSize}px Sans-Serif`;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillStyle = 'black';
-            ctx.fillText(label, node.x!, node.y! + radius + labelPadding);
-          }}
-          nodePointerAreaPaint={(node, color, ctx) => {
-            ctx.fillStyle = color;
-            ctx.beginPath();
-            ctx.arc(node.x!, node.y!, 8, 0, 2 * Math.PI, false);
-            ctx.fill();
-          }}
-          onNodeClick={onNodeClick}
-          onLinkClick={onLinkClick}
-          enableNodeDrag={true}
-        />}
+        ctx.font = `${fontSize}px Sans-Serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = 'black';
+        ctx.fillText(label, node.x!, node.y! + radius + labelPadding);
+        }}
+        nodePointerAreaPaint={(node, color, ctx) => {
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.arc(node.x!, node.y!, 8, 0, 2 * Math.PI, false);
+        ctx.fill();
+        }}
+        linkCanvasObjectMode={() => 'after'}
+        linkCanvasObject={(link, ctx, globalScale) => {
+        // Draw arrowhead at target
+        const start = link.source as Node;
+        const end = link.target as Node;
+        if (!start.x || !start.y || !end.x || !end.y) return;
+
+        const arrowLength = 10 / globalScale;
+        const arrowWidth = 10 / globalScale;
+        const dx = end.x - start.x;
+        const dy = end.y - start.y;
+        const angle = Math.atan2(dy, dx);
+
+        // Position arrow tip at end node edge
+        const nodeRadius = 10 / globalScale;
+        const arrowTipX = end.x - Math.cos(angle) * nodeRadius;
+        const arrowTipY = end.y - Math.sin(angle) * nodeRadius;
+
+        ctx.save();
+        ctx.translate(arrowTipX, arrowTipY);
+        ctx.rotate(angle);
+
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(-arrowLength, arrowWidth / 2);
+        ctx.lineTo(-arrowLength, -arrowWidth / 2);
+        ctx.closePath();
+        ctx.fillStyle = '#555';
+        ctx.fill();
+        ctx.restore();
+        }}
+        onNodeClick={onNodeClick}
+        onLinkClick={onLinkClick}
+        enableNodeDrag={true}
+      />}
     </div>
   );
 }
