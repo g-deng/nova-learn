@@ -5,7 +5,7 @@ import { useEffect, useState } from "react"
 import { useLocation, useNavigate, useOutletContext, useParams } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { ChevronLeft } from "lucide-react"
+import { ChevronLeft, Loader2 } from "lucide-react"
 import { Switch } from "@/components/ui/switch"
 import {
   Select,
@@ -15,15 +15,20 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 
-type ExamInfo = {
+export type ExamInfo = {
   id: string
   stackId: string
   name: string
   createdAt: string
   topics: string[]
+  bestAttempt: {
+    id: string
+    score: number
+    scoredQuestions: number
+  } | null
 }
 
-type ExamAttempt = {
+export type ExamAttempt = {
   id: string
   examId: string
   completedAt: string
@@ -41,40 +46,32 @@ type Question = {
   answer: "A" | "B" | "C" | "D"
 }
 
+type QuestionAttempt = {
+  id: string;
+  examAttemptId: string;
+  questionId: string;
+  selectedOption: string;
+  isCorrect: boolean;
+  scored: boolean;
+  manualCredit: boolean;
+}
+
 export default function ExamInfoPage() {
   const [examInfo, setExamInfo] = useState<ExamInfo | null>(null)
+  const [questions, setQuestions] = useState<Question[]>([])
   const [examAttempts, setExamAttempts] = useState<ExamAttempt[]>([])
   const [selectedAttempt, setSelectedAttempt] = useState<ExamAttempt | null>(null)
-  const [questionAttempts, setQuestionAttempts] = useState<{ [questionId: string]: string }>({});
-  const [questions, setQuestions] = useState<Question[]>([])
+  const [questionAttempts, setQuestionAttempts] = useState<{ [questionId: string]: QuestionAttempt }>({});
   const [revealAll, setRevealAll] = useState(false)
+  const [updatedQuestionAttempt, setUpdatedQuestionAttempt] = useState<QuestionAttempt[]>([]);
+  const [loadingScoring, setLoadingScoring] = useState(false)
+  const [loadingQuestions, setLoadingQuestions] = useState(false)
+  const [updatedCtr, setUpdatedCtr] = useState(0)
   const navigate = useNavigate()
 
   const stackId = useOutletContext<string>();
   const { examId } = useParams<{ examId: string }>();
   const attemptId = useLocation().hash.slice(1);
-
-  useEffect(() => {
-    if (attemptId) {
-      const selected = examAttempts.find(a => a.id === attemptId);
-      setSelectedAttempt(selected || null);
-      const getSelectedAnswers = async () => {
-        try {
-          const response = await api.get(`/exams/${examId}/attempt/${attemptId}/questions`);
-          const attempts = response.data;
-          const answersMap: { [questionId: string]: string } = {};
-          attempts.forEach((attempt: any) => {
-            answersMap[attempt.question_id] = attempt.selected_option;
-          });
-          setQuestionAttempts(answersMap);
-          console.log(answersMap);
-        } catch (error) {
-          console.error("Error fetching question attempts:", error);
-        }
-      }
-      getSelectedAnswers();
-    }
-  }, [attemptId]);
 
   useEffect(() => {
     const getExamInfo = async () => {
@@ -86,6 +83,11 @@ export default function ExamInfoPage() {
           name: response.data.name,
           createdAt: response.data.created_at,
           topics: response.data.topics,
+          bestAttempt: response.data.best_attempt ? {
+            id: response.data.best_attempt.id,
+            score: response.data.best_attempt.score,
+            scoredQuestions: response.data.best_attempt.scored_questions
+          } : null
         })
         const responseAttempts = await api.get(`/exams/${examId}/attempts`)
         setExamAttempts(
@@ -104,7 +106,44 @@ export default function ExamInfoPage() {
       }
     }
     getExamInfo()
-  }, [stackId, examId])
+  }, [stackId, examId, attemptId])
+
+  useEffect(() => {
+    if (attemptId) {
+      const selected = examAttempts.find(a => a.id === attemptId);
+      setSelectedAttempt(selected || null);
+    }
+  }, [questionAttempts])
+
+  useEffect(() => {
+    const getSelectedAnswers = async () => {
+      try {
+        setLoadingQuestions(true);
+        setQuestionAttempts({});
+        if (attemptId) {
+          const response = await api.get(`/exams/attempt/${attemptId}/questions`);
+          const answersMap: { [questionId: string]: QuestionAttempt } = {};
+          response.data.forEach((attempt: any) => {
+            answersMap[attempt.question_id] = {
+              id: attempt.id,
+              examAttemptId: attempt.exam_attempt_id,
+              questionId: attempt.question_id,
+              selectedOption: attempt.selected_option,
+              isCorrect: attempt.is_correct,
+              scored: attempt.scored,
+              manualCredit: attempt.manual_credit
+            };
+          });
+          setQuestionAttempts(answersMap);
+        }
+      } catch (error) {
+        console.error("Error fetching question attempts:", error);
+      } finally {
+        setLoadingQuestions(false);
+      }
+    }
+    getSelectedAnswers();
+  }, [selectedAttempt, examAttempts])
 
   const handleTakeExam = () => {
     navigate("take");
@@ -118,7 +157,15 @@ export default function ExamInfoPage() {
     }
   }
   const handleDeleteExamAttempt = async () => {
-    
+    try {
+      await api.post(`/exams/attempt/${selectedAttempt?.id}/delete`);
+      const updatedAttempts = examAttempts.filter(a => a.id !== selectedAttempt?.id);
+      setExamAttempts(updatedAttempts);
+      setSelectedAttempt(null);
+      navigate("#");
+    } catch (error) {
+      console.error("Error deleting exam attempt:", error);
+    }
   }
   const onSelectionValueChange = (val: string) => {
     if (val == "x") {
@@ -130,9 +177,29 @@ export default function ExamInfoPage() {
       navigate(`#${val}`);
     }
   }
+  const handleUpdateScoring = async () => {
+    try {
+      setLoadingScoring(true);
+      const response = await api.post(`/exams/attempt/${selectedAttempt?.id}/update_scoring`, {
+        question_attempts: Object.values(updatedQuestionAttempt).map((qs) => {
+          return {
+            question_attempt_id: qs.id,
+            scored: qs.scored,
+            manual_credit: qs.manualCredit
+          };
+        })
+      });
+      setSelectedAttempt(response.data);
+      setUpdatedCtr((prev) => prev + 1);
+    } catch (error) {
+      console.error("Error updating question scoring:", error);
+    } finally {
+      setLoadingScoring(false);
+    }
+  }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="w-full h-full min-h-0 p-6 space-y-6 overflow-auto">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -144,7 +211,7 @@ export default function ExamInfoPage() {
           <DeletionDialog
             triggerLabel=""
             title="Delete Exam"
-            description="Are you sure you want to delete this exam? This action cannot be undone."
+            description="Are you sure you want to delete this exam? This action cannot be undone. All exam information and exam attempts will be erased."
             onConfirm={handleDeleteExam}
             confirmLabel="Delete"
             showIcon={true}
@@ -154,43 +221,40 @@ export default function ExamInfoPage() {
 
       {/* Attempts Section */}
       <div>
-        <div className="flex items-center justify-between mb-2">
-          <h3 className="text-lg font-medium">Past Attempts</h3>
-          <Select
-            value={selectedAttempt?.id || ""}
-            onValueChange={onSelectionValueChange}
-          >
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder="Select attempt..." />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem key="clear" value={"x"}>No Selection</SelectItem>
-              {examAttempts.map((a) => (
-                <SelectItem key={a.id} value={a.id}>
-                  {new Date(a.completedAt).toLocaleString()} -{" "}
-                  {a.score}/{a.scoredQuestions}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <Select
+          value={selectedAttempt?.id || ""}
+          onValueChange={onSelectionValueChange}
+        >
+          <SelectTrigger className="min-w-48">
+            <SelectValue placeholder="Select attempt..." />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem key="clear" value={"x"}>No Selection</SelectItem>
+            {examAttempts.map((a) => (
+              <SelectItem key={a.id} value={a.id}>
+                {new Date(a.completedAt).toLocaleString()} -{" "}
+                {a.score}/{a.scoredQuestions}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
         {/* Questions */}
-        <div>
+        <div className="w-full">
           <div className="w-full flex flex-col items-center justify-between mb-2">
             {selectedAttempt && <div className="w-full flex items-center justify-between">
               <h2 className="text-lg font-medium underline">{`Reviewing Attempt at ${new Date(selectedAttempt.completedAt).toLocaleString()}`}</h2>
               <DeletionDialog
-                triggerLabel="Delete Attempt"
+                triggerLabel=""
                 title="Delete Attempt"
                 description="Are you sure you want to delete this exam attempt? This action cannot be undone. The exam and other attempts will be preserved."
                 onConfirm={handleDeleteExamAttempt}
                 confirmLabel="Delete"
-                showIcon={false}
+                showIcon={true}
               />
             </div>}
             <div className="w-full flex items-center justify-between">
-              <h3 className="text-lg font-medium">{`Questions`}</h3>
+              <h3 className="text-lg font-medium">Questions</h3>
               <div className="flex flex-col">
                 <div className="flex items-center gap-2">
                   <span className="text-sm">Reveal All</span>
@@ -203,6 +267,7 @@ export default function ExamInfoPage() {
             </div>
           </div>
           <div className="space-y-4">
+            {loadingQuestions && <div className="flex justify-center"><Loader2 className="animate-spin" /></div>}
             {!selectedAttempt && questions.map((q, idx) => (
               <QuestionCard
                 key={q.id}
@@ -211,19 +276,29 @@ export default function ExamInfoPage() {
                 revealAll={revealAll}
               />
             ))}
-            {selectedAttempt && questions.map((q, idx) => (
-              <ReviewQuestionCard
-                key={q.id}
-                index={idx}
-                question={q}
-                selection={questionAttempts[q.id]}
-                revealAll={revealAll}
-              />
-            ))}
+            {selectedAttempt && questions.map((q, idx) => {
+              if (questionAttempts[q.id]) {
+                return <ReviewQuestionCard
+                  key={`${selectedAttempt.id}-${q.id}-${updatedCtr}`}
+                  index={idx}
+                  questionAttempt={questionAttempts[q.id]}
+                  question={q}
+                  revealAll={revealAll}
+                  setUpdatedQuestionAttempt={setUpdatedQuestionAttempt}
+                />
+              }
+            })}
+            {selectedAttempt && <Button
+              onClick={handleUpdateScoring}
+              disabled={loadingScoring || updatedQuestionAttempt.length === 0}
+            >
+              {loadingScoring ? <Loader2 className="animate-spin" /> : "Update Scoring"}
+            </Button>}
           </div>
         </div>
       </div>
-    </div>)
+    </div>
+  )
 }
 
 function QuestionCard({
@@ -235,8 +310,10 @@ function QuestionCard({
   index: number
   revealAll: boolean
 }) {
-  const [reveal, setReveal] = useState(false)
-  const showAnswer = revealAll || reveal
+  const [reveal, setReveal] = useState(revealAll)
+  useEffect(() => {
+    setReveal(revealAll);
+  }, [revealAll]);
 
   return (
     <Card>
@@ -259,7 +336,7 @@ function QuestionCard({
           ].map(([val, label]) => (
             <div
               key={val}
-              className={`p-2 rounded ${showAnswer && val === question.answer
+              className={`p-2 rounded ${reveal && val === question.answer
                 ? "bg-green-200 dark:bg-green-800"
                 : "bg-muted"
                 }`}
@@ -277,35 +354,59 @@ function ReviewQuestionCard({
   question,
   index,
   revealAll,
-  selection
+  questionAttempt,
+  setUpdatedQuestionAttempt: setUpdatedQuestionAttempts,
 }: {
   question: Question
   index: number
   revealAll: boolean
-  selection: string | undefined
+  questionAttempt: QuestionAttempt
+  setUpdatedQuestionAttempt: (func: (prev: QuestionAttempt[]) => QuestionAttempt[]) => void
 }) {
-  const [reveal, setReveal] = useState(false)
-  const [giveCredit, setGiveCredit] = useState(false)
-  const [unscored, setUnscored] = useState(false)
+  const [reveal, setReveal] = useState(revealAll)
+  const [giveCredit, setGiveCredit] = useState(questionAttempt.manualCredit)
+  const [unscored, setUnscored] = useState(!questionAttempt.scored)
+  useEffect(() => {
+    if (unscored) {
+      setGiveCredit(false);
+    }
+    if (questionAttempt && (giveCredit !== questionAttempt.manualCredit || unscored === questionAttempt.scored)) {
+      console.log("diff");
+      console.log(questionAttempt);
+      setUpdatedQuestionAttempts((prev) => prev.filter((qa) => qa.id !== questionAttempt.id).concat([{
+        ...questionAttempt,
+        manualCredit: giveCredit,
+        scored: !unscored
+      }]));
+    } else {
+      setUpdatedQuestionAttempts((prev) => prev.filter((qa) => qa.id !== questionAttempt.id));
+    }
+  }, [giveCredit, unscored]);
 
-  const showAnswer = revealAll || reveal
+  useEffect(() => {
+    setReveal(revealAll);
+  }, [revealAll])
+
   const shading = (val: string) => {
-    if (showAnswer) {
+    if (reveal) {
       if (val === question.answer) { // correct
-        if (val === selection) { // correct, selected
+        if (val === questionAttempt?.selectedOption) { // correct, selected
           return "bg-green-200 dark:bg-green-800 border-2 border-green-500";
         } else { // correct, not selected
           return "bg-green-200 dark:bg-green-800";
         }
       } else { // incorrect
-        if (val === selection) { // incorrect, selected
+        if (val === questionAttempt?.selectedOption) { // incorrect, selected
+          if (giveCredit) {
+            return "bg-yellow-100 dark:bg-yellow-800 border-2 border-red-500";
+          }
           return "bg-muted border-2 border-red-500";
         } else { // incorrect, not selected
           return "bg-muted";
         }
       }
     } else {
-      if (val === selection) {
+      if (val === questionAttempt?.selectedOption) {
         return "bg-muted border-2 border-blue-500";
       } else {
         return "bg-muted";
@@ -314,11 +415,14 @@ function ReviewQuestionCard({
   }
 
   return (
-    <Card>
+    <Card className={unscored ? "bg-gray-200" : ""}>
       <CardContent className="flex flex-col justify-between">
-        <div className="flex items-center justify-between">
-          <div className="font-medium">
-            {index + 1}. {question.text}
+        <div className="flex flex-col items-start justify-between p-1">
+          <div className="flex w-full justify-between">
+            <h3>{index + 1}. {question.text}</h3>
+            {reveal && <p className="text-sm">
+              {(questionAttempt.isCorrect || giveCredit) && !unscored ? "1" : "0"}/{unscored ? "0" : "1"}
+            </p>}
           </div>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-1">

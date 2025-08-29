@@ -221,7 +221,7 @@ export default function AddTopicsPage() {
   };
 
   return (
-    <div>
+    <div className="w-full h-full overflow-auto">
       <header>
         <h1 className="text-xl font-bold">Edit Topics</h1>
       </header>

@@ -18,6 +18,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card"
 import api from "@/lib/api"
 import { useNavigate, useOutletContext, useParams } from "react-router-dom";
+import { Skeleton } from "@/components/ui/skeleton"
 
 type Question = {
   id: string;
@@ -31,6 +32,7 @@ type Question = {
 
 export default function ExamPage() {
   const [examName, setExamName] = useState("");
+  const [loadingQuestions, setLoadingQuestions] = useState(false)
   const [questions, setQuestions] = useState<Question[]>([]);
   const navigate = useNavigate();
   const { examId } = useParams<{ examId: string }>();
@@ -39,12 +41,15 @@ export default function ExamPage() {
   useEffect(() => {
     const fetchExamInfo = async () => {
       try {
+        setLoadingQuestions(true);
         const response = await api.get(`/exams/${examId}/questions`);
         setQuestions(response.data);
         const examResponse = await api.get(`/exams/${examId}`);
         setExamName(examResponse.data.name);
       } catch (error) {
         console.error("Failed to fetch questions:", error);
+      } finally {
+        setLoadingQuestions(false);
       }
     };
     fetchExamInfo();
@@ -52,16 +57,30 @@ export default function ExamPage() {
 
 
   return (
-    <div className="h-full p-4">
+    <div className="w-full h-full min-h-0 p-4 overflow-auto">
       <div className="flex items-center justify-between pb-4">
         <h2 className="text-lg font-medium"> {examName}</h2>
         <Button variant="outline" onClick={() => navigate(`/stack/${stackId}/exams`)}>Back to Exams</Button>
       </div>
-      <div className="max-h-3/5 overflow-y-auto">
-        {questions.length > 0 && (
-          <ExamForm questions={questions} examId={examId} stackId={stackId} />
+      <div>
+        {loadingQuestions ? (
+          <div className="space-y-4">
+            {[1, 2, 3].map((i) => (
+              <Card key={i} className="shadow-md rounded-xl">
+          <CardContent className="p-6 space-y-4">
+            <Skeleton className="h-6 w-2/3 rounded" />
+            <Skeleton className="h-4 w-1/2 rounded" />
+            <Skeleton className="h-4 w-1/2 rounded" />
+          </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          questions.length > 0 && (
+            <ExamForm questions={questions} examId={examId} stackId={stackId} />
+          )
         )}
-        {questions.length === 0 && (
+        {!loadingQuestions && questions.length === 0 && (
           <div className="p-4 text-center font-medium">
             Exam does not exist or has no questions.
           </div>
@@ -106,12 +125,12 @@ function ExamForm({ questions, examId, stackId }: ExamFormProps) {
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className="h-full w-full min-h-0 mx-auto space-y-6">
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 min-h-0">
           {questions.map((q, idx) => (
             <Card key={q.id} className="shadow-md rounded-xl">
-              <CardContent className="p-6=">
+              <CardContent className="p-6">
                 <FormField
                   control={form.control}
                   name={q.id}
@@ -124,7 +143,7 @@ function ExamForm({ questions, examId, stackId }: ExamFormProps) {
                         <RadioGroup
                           onValueChange={field.onChange}
                           value={field.value}
-                          className="space-y-2 mt-2"
+                          className="space-y-2 mt-2 relative"
                         >
                           {[
                             ["A", q.option_a],

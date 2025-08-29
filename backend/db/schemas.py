@@ -81,16 +81,6 @@ class ExamSchema(BaseModel):
     class Config:
         orm_mode = True
 
-class ExamInfoSchema(BaseModel):
-    id: uuid.UUID
-    stack_id: uuid.UUID
-    name: str
-    created_at: datetime
-    topics: List[str]
-
-    class Config:
-        orm_mode = True
-
 
 class ExamAttemptSchema(BaseModel):
     id: uuid.UUID
@@ -98,6 +88,17 @@ class ExamAttemptSchema(BaseModel):
     completed_at: datetime
     scored_questions: Optional[int] = None
     score: Optional[int] = None
+
+    class Config:
+        orm_mode = True
+
+class ExamInfoSchema(BaseModel):
+    id: uuid.UUID
+    stack_id: uuid.UUID
+    name: str
+    created_at: datetime
+    topics: List[str]
+    best_attempt: Optional[ExamAttemptSchema] = None
 
     class Config:
         orm_mode = True

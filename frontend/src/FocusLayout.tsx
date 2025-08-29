@@ -22,35 +22,29 @@ export default function FocusLayout() {
   const stackId = useOutletContext<string>();
   const navigate = useNavigate();
 
-  const fetchTopicData = async () => {
+  useEffect(() => {
+  const fetchData = async () => {
     try {
       const topicsResult = await api.get(`/stacks/${stackId}/topics`);
-      const parsedTopics = topicsResult.data.map((t: any) => {
-        return { id: t.id, name: t.name } as Node;
-      });
+      const parsedTopics = topicsResult.data.map((t: any) => ({
+        id: t.id,
+        name: t.name,
+      }));
       setTopics(parsedTopics);
-    } catch (error) {
-      console.error("Failed to fetch topics:", error);
-    }
-  }
 
-  const fetchDependencyData = async () => {
-    try {
       const dependencyResult = await api.get(`/stacks/${stackId}/dependencies`);
-      const parsedDeps = dependencyResult.data.map((d: any) => {
-        return { source: d.from_topic_id, target: d.to_topic_id } as Link;
-      });
+      const parsedDeps = dependencyResult.data.map((d: any) => ({
+        source: d.from_topic_id,
+        target: d.to_topic_id,
+      }));
       setDependencies(parsedDeps);
-    } catch (error) {
-      console.error("Failed to fetch dependencies:", error);
+    } catch (err) {
+      console.error("Failed to fetch topic/dependency data:", err);
     }
-  }
+  };
 
-  useEffect(() => {
-    console.log("Rerender Focus Layout with stackId: ", stackId);
-    fetchTopicData();
-    fetchDependencyData();
-  }, [stackId])
+  fetchData();
+}, [stackId]);
 
   return (
     <ResizablePanelGroup direction="horizontal" className="w-full h-full pt-4">
@@ -86,7 +80,9 @@ export default function FocusLayout() {
       </ResizablePanel>
       <ResizableHandle />
       <ResizablePanel>
-        <Outlet context={useOutletContext<string>()}/>
+        <div className="min-h-0 h-full w-full overflow-hidden">
+          <Outlet context={useOutletContext<string>()}/>
+        </div>
       </ResizablePanel>
       
     </ResizablePanelGroup>

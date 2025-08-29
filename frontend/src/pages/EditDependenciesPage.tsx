@@ -189,11 +189,11 @@ export default function AddDependenciesPage() {
   }
 
   return (
-    <div className="h-full w-full flex flex-col">
+    <div className="h-full w-full overflow-auto">
       <div className="flex-1 flex flex-row">
         <div className="flex-none min-w-[500px] p-2">
           <h2 className="text-xl font-bold"> Edit Dependencies</h2>
-          <div className="flex flex-col gap-4 pb-4 overflow-y-auto">
+          <div className="flex flex-col gap-4 pb-4">
             {dependencies && dependencies.map((dep, index) => (
               <DependencyLine
                 key={dep.from + dep.to + index}

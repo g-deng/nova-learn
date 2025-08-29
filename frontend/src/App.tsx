@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import HomePage from "@/pages/HomePage";
 import LoginPage from "@/pages/LoginPage";
 import StacksPage from "@/pages/StacksPage";
@@ -26,6 +26,8 @@ function App() {
           <Route path="/create-stack" element={<CreateStackPage />} />
           <Route path="/stack" element={<StackLayout />}>
             <Route path=":stackId" element={<FocusLayout />}>
+              <Route index element={<Navigate to="flashcards" replace />} />
+              <Route path="*" element={<Navigate to="flashcards" replace />} />
               <Route path="flashcards" element={<FlashcardPage />} />
               {/* <Route path="chat" element={<ChatPage />} /> */}
               <Route path="exams" element={<ExamListPage />} />
@@ -33,8 +35,8 @@ function App() {
               <Route path="exams/:examId/take" element={<ExamPage />} />
               {/* <Route path="stats" element={<StatisticsPage />} /> */}
             </Route>
-            <Route path=":stackId/edit-topics" element={<AddTopicsPage />}/>
-            <Route path=":stackId/edit-dependencies" element={<AddDependenciesPage />}/>
+            <Route path=":stackId/edit-topics" element={<AddTopicsPage />} />
+            <Route path=":stackId/edit-dependencies" element={<AddDependenciesPage />} />
           </Route>
         </Route>
       </Routes>

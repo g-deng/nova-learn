@@ -25,15 +25,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Check } from "lucide-react"
 import { cn } from "@/lib/utils"
-
-
-type ExamInfo = {
-  id: string;
-  name: string;
-  topics: string[];
-  date: string;
-  score: number | null;
-}
+import type { ExamInfo } from "./ExamInfoPage";
 
 export default function ExamListPage() {
   const [exams, setExams] = useState<ExamInfo[]>([]);
@@ -45,7 +37,19 @@ export default function ExamListPage() {
     const getExams = async () => {
       try {
         const response = await api.get(`/exams/${stackId}/list`);
-        setExams(response.data);
+        setExams(response.data.map((examInfo: any) => {
+          return {
+            id: examInfo.id,
+            name: examInfo.name,
+            topics: examInfo.topics,
+            createdAt: examInfo.created_at,
+            bestAttempt: examInfo.best_attempt ? {
+              id: examInfo.best_attempt.id,
+              score: examInfo.best_attempt.score,
+              scoredQuestions: examInfo.best_attempt.scored_questions
+            } : examInfo
+          };
+        }));
         console.log(response.data);
       } catch (error) {
         console.error("Error fetching exams:", error);
@@ -53,15 +57,6 @@ export default function ExamListPage() {
     }
     getExams();
   }, [openCreator]);
-
-  const onDelete = async (id: string) => {
-    try {
-      await api.post(`/exams/${id}/delete`);
-      setExams((prev) => prev.filter((exam) => exam.id !== id));
-    } catch (error) {
-      console.error("Error deleting exam:", error);
-    }
-  }
 
   return (
     <div className="h-full p-4">
@@ -76,7 +71,7 @@ export default function ExamListPage() {
       }
       <div className="grid grid-cols-1 gap-4 overflow-y-auto">
         {exams.map((exam) => (
-          <ExamLine key={exam.id} {...exam} onDelete={() => onDelete(exam.id)} />
+          <ExamLine key={exam.id} {...exam} />
         ))}
       </div>
     </div>
@@ -84,33 +79,33 @@ export default function ExamListPage() {
 }
 
 
-function ExamLine({ id, name, topics, date, score, onDelete }: ExamInfo & { onDelete: () => void }) {
+function ExamLine({ id, name, topics, createdAt, bestAttempt }: ExamInfo) {
   const navigate = useNavigate()
 
   return (
     <Card>
       <CardHeader className="flex flex-row justify-between items-center">
-        <h2 className="font-medium">{name}</h2>
         <div>
-          <p className="text-sm text-muted-foreground">{date}</p>
-          {topics && topics.length > 0 && (
-            <div className="flex flex-wrap gap-1 mt-2">
-              {topics.map((topic, i) => (
-                <Badge key={i} variant="secondary">
-                  {topic}
-                </Badge>
-              ))}
-            </div>
-          )}
+          <h2 className="font-medium">{name}</h2>
+          <p className="text-sm text-muted-foreground">{new Date(createdAt).toLocaleString()}</p>
         </div>
+        {topics && topics.length > 0 && (
+          <div className="flex flex-wrap justify-end gap-1 mt-2">
+            {topics.map((topic, i) => (
+              <Badge key={i} variant="secondary">
+                {topic}
+              </Badge>
+            ))}
+          </div>
+        )}
       </CardHeader>
 
-      <CardContent className="flex flex-row items-center gap-4">
-        <div className="">
-          {score !== null ? score : "N/A"}
+      <CardContent className="flex flex-row items-center justify-between gap-4">
+        <div className="flex flex-row gap-2">
+          <Button className="h-6" variant="outline" onClick={() => navigate(`${id}`)}>View Exam</Button>
+          <Button className="h-6" onClick={() => navigate(`${id}/take`)}>Take Exam</Button>
         </div>
-        <Button className="h-6" onClick={() => navigate(`${id}`)}>Take Exam</Button>
-        <Button className="h-6" variant="destructive" onClick={onDelete}>Delete</Button>
+        {bestAttempt && <Badge>Best: {bestAttempt.score} / {bestAttempt.scoredQuestions}</Badge>}
       </CardContent>
     </Card>
   )

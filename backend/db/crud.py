@@ -254,6 +254,17 @@ def get_exams_by_stack_with_topics(db: Session, stack_id: uuid.UUID, user_id: uu
         topic_names = [t[0] for t in topics]
         exam_dict = exam.__dict__.copy()
         exam_dict['topics'] = topic_names
+
+        attempts = (
+            db.query(ExamAttempt)
+            .filter(ExamAttempt.exam_id == exam.id)
+            .all()
+        )
+        if attempts:
+            best_attempt = max(attempts, key=lambda a: (a.score or 0, a.scored_questions or 0))
+            exam_dict['best_attempt'] = best_attempt
+        else:
+            exam_dict['best_attempt'] = None
         result.append(exam_dict)
     return result
 
@@ -344,7 +355,7 @@ def get_exam_attempts(db: Session, exam_id: uuid.UUID, user_id: uuid.UUID):
 
 def score_exam_attempt(db: Session, attempt_id: uuid.UUID, user_id: uuid.UUID):
     exam_attempt = get_exam_attempt_by_id(db, attempt_id, user_id)
-    question_attempts = get_question_attempts_by_exam(db, exam_attempt.exam_id, user_id)
+    question_attempts = get_question_attempts_by_exam_attempt(db, exam_attempt.id, user_id)
     total_scored_questions = 0
     total_score = 0
     for q in question_attempts:
@@ -385,15 +396,9 @@ def get_question_attempt_by_id(db: Session, question_attempt_id: uuid.UUID, user
     get_question_by_id(db, question_attempt.question_id, user_id)
     return question_attempt
 
-def get_question_attempts_by_exam(db: Session, exam_id: uuid.UUID, user_id: uuid.UUID):
-    get_exam_by_id(db, exam_id, user_id)
-    attempts = (
-        db.query(QuestionAttempt)
-        .join(ExamAttempt, QuestionAttempt.exam_attempt_id == ExamAttempt.id)
-        .filter(ExamAttempt.exam_id == exam_id)
-        .all()
-    )
-    return attempts 
+def get_question_attempts_by_exam_attempt(db: Session, exam_attempt_id: uuid.UUID, user_id: uuid.UUID):
+    get_exam_attempt_by_id(db, exam_attempt_id, user_id)
+    return db.query(QuestionAttempt).filter(QuestionAttempt.exam_attempt_id == exam_attempt_id).all()
 
 def update_question_attempt_scoring(db: Session, question_attempt_id: uuid.UUID, scored: bool, manual_credit: bool, user_id: uuid.UUID):
     question_attempt = get_question_attempt_by_id(db, question_attempt_id, user_id)

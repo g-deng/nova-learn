@@ -71,11 +71,29 @@ async def delete_question(question_id: uuid.UUID, user = Depends(get_current_use
     return crud.delete_question(db, question_id, user.id)
 
 
-@router.post("/{exam_attempt_id}/score", response_model=ExamAttemptSchema)
-async def score_exam(exam_attempt_id: uuid.UUID, user = Depends(get_current_user), db: Session = Depends(get_db)):
+@router.post("/attempt/{exam_attempt_id}/score", response_model=ExamAttemptSchema)
+async def score_exam_attempt(exam_attempt_id: uuid.UUID, user = Depends(get_current_user), db: Session = Depends(get_db)):
     try:
-        exam_attempt = crud.score_exam_attempt(db, exam_attempt_id, user.id)
-        return exam_attempt
+        return crud.score_exam_attempt(db, exam_attempt_id, user.id)
+    except ValueError:
+        raise HTTPException(status_code=404, detail="Exam attempt not found")
+
+@router.post("/attempt/{exam_attempt_id}/delete")
+async def delete_exam_attempt(exam_attempt_id: uuid.UUID, user = Depends(get_current_user), db: Session = Depends(get_db)):
+    try:
+        return crud.delete_exam_attempt(db, exam_attempt_id, user.id)
+    except ValueError:
+        raise HTTPException(status_code=404, detail="Exam attempt not found")
+
+class UpdateAttemptRequest(BaseModel):
+    question_attempts: List[dict] # dicts contain question_attempt_id, scored, and manual_credit
+
+@router.post("/attempt/{exam_attempt_id}/update_scoring")
+async def update_exam_attempt(exam_attempt_id: uuid.UUID, body: UpdateAttemptRequest, user = Depends(get_current_user), db: Session = Depends(get_db)):
+    try: 
+        for qa in body.question_attempts:
+            crud.update_question_attempt_scoring(db, qa["question_attempt_id"], qa["scored"], qa["manual_credit"], user.id)
+        return crud.score_exam_attempt(db, exam_attempt_id, user.id)
     except ValueError:
         raise HTTPException(status_code=404, detail="Exam attempt not found")
 
@@ -88,7 +106,7 @@ async def upload_exam_attempt(exam_id: uuid.UUID, body: UploadAttemptRequest, us
         exam_attempt = crud.create_exam_attempt(db, exam_id, user.id)
         for question in body.question_attempts:
             crud.create_question_attempt(db, exam_attempt.id, question["question_id"], question["selected_option"], user.id)
-        return exam_attempt
+        return crud.score_exam_attempt(db, exam_attempt.id, user.id)
     except ValueError:
         raise HTTPException(status_code=404, detail="Exam not found")
     
@@ -100,10 +118,10 @@ async def get_exam_attempts(exam_id: uuid.UUID, user = Depends(get_current_user)
     except ValueError:
         raise HTTPException(status_code=404, detail="Exam not found")
 
-@router.get("/{exam_id}/attempt/{attempt_id}/questions", response_model=List[QuestionAttemptSchema])
-async def get_exam_question_attempts(exam_id: uuid.UUID, attempt_id: uuid.UUID, user = Depends(get_current_user), db: Session = Depends(get_db)):
+@router.get("/attempt/{attempt_id}/questions", response_model=List[QuestionAttemptSchema])
+async def get_exam_question_attempts(attempt_id: uuid.UUID, user = Depends(get_current_user), db: Session = Depends(get_db)):
     try:
-        question_attempts = crud.get_question_attempts_by_exam(db, exam_id, user.id)
+        question_attempts = crud.get_question_attempts_by_exam_attempt(db, attempt_id, user.id)
         return question_attempts
     except ValueError:
         raise HTTPException(status_code=404, detail="Exam attempt not found")

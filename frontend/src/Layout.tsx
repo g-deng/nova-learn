@@ -50,7 +50,7 @@ export default function Layout() {
   }
 
   return (
-    <div className="flex h-screen w-screen">
+    <div className="flex h-screen w-screen overflow-hidden">
       <SidebarProvider>
         <AppSidebar />
         <div className="flex flex-col flex-1">
