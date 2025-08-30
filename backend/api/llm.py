@@ -94,15 +94,17 @@ async def infer_topic_dependencies(topics: List[str]) -> List[List[str]]:
         return []
     
 
-async def extract_flashcards(topic: str, num_cards: int = 10, prompt: str | None = None) -> List[dict]:
-    prompt = (
+async def extract_flashcards(topic: str, num_cards: int = 10, avoid_fronts: List[str] = [], prompt: str | None = None) -> List[dict]:
+    avoid_text = "" if not avoid_fronts else ("The following flashcards have already been created. Do not create flashcards with these fronts: " + ", ".join(avoid_fronts) + "\n\n")
+    llm_prompt = (
         "Generate a set of " + str(num_cards) + " flashcards for the following topic:\n\n"
         f"Topic: {topic}\n\n"
-        "Each flashcard should have a 'front' (question/prompt) and 'back' (answer/explanation). "
-        "Format your output as a JSON array of objects with 'front' and 'back' fields. "
-        "Do not include any extra text outside the JSON array."
+        "Each flashcard should have a 'front' (question/prompt), a 'back' (concise answer that may be in incomplete sentences, prefer 1 sentence or less), and an 'explanation' (2-3 sentence explanation of the answer). "
+        "Format your output as a JSON array of objects with 'front', 'back', and 'explanation' fields. "
+        "Do not include any extra text outside the JSON array.\n"
+        f"{avoid_text}"
+        f"{f'Consider the following instructions if relevant: {prompt}' if prompt else ''}"
     )
-
     headers = {
         "Authorization": f"Bearer {OPENROUTER_API_KEY}",
     }
@@ -110,12 +112,13 @@ async def extract_flashcards(topic: str, num_cards: int = 10, prompt: str | None
     payload = {
         "model": model,
         "messages": [
-            {"role": "user", "content": prompt}
+            {"role": "user", "content": llm_prompt}
         ],
         "temperature": temperature
     }
 
     print("Attempting to extract flashcards:")
+    print(payload)
 
     async with httpx.AsyncClient() as client:
         response = await client.post(
@@ -135,13 +138,15 @@ async def extract_flashcards(topic: str, num_cards: int = 10, prompt: str | None
         cards = json.loads(content)
         print("Cards")
         print(cards)
-        if isinstance(cards, list) and all(isinstance(card, dict) for card in cards):
+        # Ensure each card has 'front', 'back', and 'explanation'
+        if isinstance(cards, list) and all(isinstance(card, dict) and "front" in card and "back" in card and "explanation" in card for card in cards):
             return cards
         else:
-            raise ValueError("Unexpected format")
+            raise ValueError("Unexpected format: missing 'front', 'back', or 'explanation'")
     except Exception as e:
+        print(response.text)
         print("Error parsing response:", e)
-        return []
+        raise ValueError("Failed to extract flashcards")
 
 
 async def create_multiple_choice_exam(title: str, topics: List[str], num_questions: int = 10, prompt: str | None = None) -> List[dict]:

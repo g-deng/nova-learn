@@ -26,7 +26,7 @@ async def get_current_user(request: Request, db: Session = Depends(get_db)):
         if not uid:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
         user = crud.get_user_by_firebase_uid(db, uid)
-        print("user found:", user)
+        # print("user found:", user)
         if not user:
             user = crud.create_user(db, uid, decoded_token.get("name", ""))
         return user

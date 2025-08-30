@@ -1,3 +1,4 @@
+from db.models import FlashcardReview, FlashcardStats
 import uuid
 from typing import List
 from sqlalchemy.orm import Session
@@ -80,6 +81,35 @@ def delete_topic(db: Session, topic_id: uuid.UUID, user_id: uuid.UUID):
 
 # FLASHCARDS
 
+# FLASHCARD REVIEWS
+def create_flashcard_review(db: Session, flashcard_id: uuid.UUID, grade: int, latency_ms: int, user_id: uuid.UUID):
+    get_flashcard_by_id(db, flashcard_id, user_id)
+    review = FlashcardReview(flashcard_id=flashcard_id, grade=grade, latency_ms=latency_ms)
+    db.add(review)
+    db.commit()
+    db.refresh(review)
+    return review
+
+
+def get_flashcard_reviews_by_flashcard_id(db: Session, flashcard_id: uuid.UUID, user_id: uuid.UUID):
+    get_flashcard_by_id(db, flashcard_id, user_id)
+    return db.query(FlashcardReview).filter(FlashcardReview.flashcard_id == flashcard_id).order_by(FlashcardReview.timestamp.desc()).all()
+
+def delete_flashcard_review(db: Session, review_id: uuid.UUID, user_id: uuid.UUID):
+    review = db.query(FlashcardReview).filter(FlashcardReview.id == review_id).first()
+    if review:
+        if review.flashcard_id:
+            get_flashcard_by_id(db, review.flashcard_id, user_id)
+        db.delete(review)
+        db.commit()
+        return True
+    return False
+
+# FLASHCARD STATS
+def get_flashcard_stats(db: Session, flashcard_id: uuid.UUID, user_id: uuid.UUID):
+    get_flashcard_by_id(db, flashcard_id, user_id)
+    return db.query(FlashcardStats).filter(FlashcardStats.flashcard_id == flashcard_id).first()
+
 def get_flashcard_by_id(db: Session, flashcard_id: uuid.UUID, user_id: uuid.UUID):
     flashcard = db.query(Flashcard).filter(Flashcard.id == flashcard_id).first()
     if not flashcard:
@@ -103,7 +133,15 @@ def create_flashcard(db: Session, topic_id: uuid.UUID, front: str, back: str, us
     db.refresh(flashcard)
     return flashcard
 
-def create_flashcards_bulk(db: Session, topic_id: uuid.UUID, fronts: list[str], backs: List[str], user_id: uuid.UUID):
+def create_flashcard_with_explanation(db: Session, topic_id: uuid.UUID, front: str, back: str, explanation: str, user_id: uuid.UUID):
+    get_topic_by_id(db, topic_id, user_id)
+    flashcard = Flashcard(topic_id=topic_id, front=front, back=back, explanation=explanation)
+    db.add(flashcard)
+    db.commit()
+    db.refresh(flashcard)
+    return flashcard
+
+def create_flashcards_bulk(db: Session, topic_id: uuid.UUID, fronts: list[str], backs: List[str], explanations: List[str], user_id: uuid.UUID):
     get_topic_by_id(db, topic_id, user_id)
     
     if len(fronts) != len(backs): return False

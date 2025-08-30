@@ -1,15 +1,13 @@
 import uuid
 from datetime import datetime, timezone
 from typing import List
-
-from sqlalchemy import String, Text, DateTime, ForeignKey
+from sqlalchemy import String, Text, DateTime, ForeignKey, CheckConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
 class Base(DeclarativeBase):
     pass
-
 
 class User(Base):
     __tablename__ = "users"
@@ -64,6 +62,34 @@ class Topic(Base):
     )
     questions: Mapped[List["Question"]] = relationship("Question", back_populates="topic")
 
+class FlashcardReview(Base):
+    __tablename__ = "flashcard_reviews"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    flashcard_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("flashcards.id", ondelete="CASCADE"), nullable=False, index=True)
+    timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.now(timezone.utc))
+    grade: Mapped[int] = mapped_column(nullable=False)
+    latency_ms: Mapped[int] = mapped_column(nullable=True)
+
+    __table_args__ = (
+        CheckConstraint("grade >= 0 AND grade <= 5", name="check_grade_valid"),
+    )
+
+    flashcard: Mapped["Flashcard"] = relationship(back_populates="flashcard_reviews")
+
+class FlashcardStats(Base):
+    __tablename__ = "flashcard_stats"
+
+    flashcard_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("flashcards.id", ondelete="CASCADE"), primary_key=True)
+    correct_count: Mapped[int] = mapped_column(nullable=False, default=0)
+    wrong_count: Mapped[int] = mapped_column(nullable=False, default=0)
+    last_seen: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    ease: Mapped[float] = mapped_column(nullable=False, default=2.5)
+    interval_days: Mapped[int] = mapped_column(nullable=False, default=1)
+    due_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    flashcard: Mapped["Flashcard"] = relationship(back_populates="flashcard_stats")
+
 
 class Flashcard(Base):
     __tablename__ = "flashcards"
@@ -77,6 +103,8 @@ class Flashcard(Base):
     explanation: Mapped[str | None] = mapped_column(Text)
 
     topic: Mapped["Topic"] = relationship(back_populates="flashcards")
+    flashcard_reviews: Mapped[List["FlashcardReview"]] = relationship(back_populates="flashcard", cascade="all, delete-orphan")
+    flashcard_stats: Mapped["FlashcardStats"] = relationship(back_populates="flashcard", cascade="all, delete-orphan")
 
 
 class TopicDependency(Base):

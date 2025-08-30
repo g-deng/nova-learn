@@ -2,8 +2,6 @@ import * as React from "react"
 import useEmblaCarousel, {
   type UseEmblaCarouselType,
 } from "embla-carousel-react"
-import { ArrowLeft, ArrowRight } from "lucide-react"
-
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 
@@ -173,6 +171,7 @@ function CarouselPrevious({
   className,
   variant = "outline",
   size = "icon",
+  children,
   ...props
 }: React.ComponentProps<typeof Button>) {
   const { orientation, scrollPrev, canScrollPrev } = useCarousel()
@@ -193,7 +192,7 @@ function CarouselPrevious({
       onClick={scrollPrev}
       {...props}
     >
-      <ArrowLeft />
+      { children }
       <span className="sr-only">Previous slide</span>
     </Button>
   )
@@ -203,6 +202,7 @@ function CarouselNext({
   className,
   variant = "outline",
   size = "icon",
+  children,
   ...props
 }: React.ComponentProps<typeof Button>) {
   const { orientation, scrollNext, canScrollNext } = useCarousel()
@@ -213,17 +213,20 @@ function CarouselNext({
       variant={variant}
       size={size}
       className={cn(
-        "absolute size-8 rounded-full",
-        orientation === "horizontal"
-          ? "top-1/2 -right-12 -translate-y-1/2"
-          : "-bottom-12 left-1/2 -translate-x-1/2 rotate-90",
-        className
+      "absolute size-8 rounded-full",
+      (typeof className === "string" && className.includes("custom-carousel-under")) ?
+        "-bottom-12 left-1/2"
+      :
+      orientation === "horizontal"
+        ? "top-1/2 -right-12 -translate-y-1/2"
+        : "-bottom-12 left-1/2 -translate-x-1/2 rotate-90",
+      className
       )}
       disabled={!canScrollNext}
       onClick={scrollNext}
       {...props}
     >
-      <ArrowRight />
+      {children}
       <span className="sr-only">Next slide</span>
     </Button>
   )

@@ -1,3 +1,4 @@
+import React from "react";
 import { Outlet } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,7 +12,8 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
-  SidebarTrigger
+  SidebarTrigger,
+  useSidebar
 } from "./components/ui/sidebar";
 
 const items = [
@@ -19,6 +21,11 @@ const items = [
 ]
 
 function AppSidebar() {
+  const { setOpen } = useSidebar();
+
+  React.useEffect(() => {
+    setOpen(false);
+  }, [setOpen]);
   return (
     <Sidebar>
       <SidebarHeader />
