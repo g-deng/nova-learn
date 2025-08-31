@@ -14,11 +14,16 @@ from datetime import datetime, timezone
 
 router = APIRouter(prefix="/flashcards")
 
+
 @router.post("/{topic_id}/generate", response_model=List[FlashcardSchema])
-async def generate_flashcards(topic_id: uuid.UUID, user = Depends(get_current_user), db: Session = Depends(get_db)):
+async def generate_flashcards(
+    topic_id: uuid.UUID, user=Depends(get_current_user), db: Session = Depends(get_db)
+):
     topic = crud.get_topic_by_id(db, topic_id, user.id)
     if not topic:
-        raise HTTPException(status_code=404, detail="Topic not found or does not belong to user")
+        raise HTTPException(
+            status_code=404, detail="Topic not found or does not belong to user"
+        )
 
     existing_flashcards = crud.get_flashcards_by_topic_id(db, topic_id, user.id)
     avoid_fronts = [card.front for card in existing_flashcards]
@@ -28,36 +33,55 @@ async def generate_flashcards(topic_id: uuid.UUID, user = Depends(get_current_us
     created_cards = []
     for card in flashcards:
         if "front" in card and "back" in card and "explanation" in card:
-            created_card = crud.create_flashcard_with_explanation(db, topic_id, card["front"], card["back"], card["explanation"], user.id)
+            created_card = crud.create_flashcard_with_explanation(
+                db, topic_id, card["front"], card["back"], card["explanation"], user.id
+            )
             if created_card:
                 created_cards.append(created_card)
     return created_cards
 
+
 @router.get("/{topic_id}", response_model=List[FlashcardSchema])
-async def get_flashcards_by_topic(topic_id: uuid.UUID, user = Depends(get_current_user), db: Session = Depends(get_db)):
+async def get_flashcards_by_topic(
+    topic_id: uuid.UUID, user=Depends(get_current_user), db: Session = Depends(get_db)
+):
     try:
         return crud.get_flashcards_by_topic_id(db, topic_id, user.id)
-    except ValueError as e:
+    except ValueError:
         raise HTTPException(status_code=404, detail="Topic not found")
+
 
 class AddReviewRequest(BaseModel):
     grade: int
     latency_ms: int | None = None
 
+
 @router.post("/{flashcard_id}/add_review")
-async def add_flashcard_review(flashcard_id: uuid.UUID, body: AddReviewRequest, user = Depends(get_current_user), db: Session = Depends(get_db)):
+async def add_flashcard_review(
+    flashcard_id: uuid.UUID,
+    body: AddReviewRequest,
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     if not (0 <= body.grade <= 5):
         raise HTTPException(status_code=400, detail="Invalid grade value")
     flashcard = crud.get_flashcard_by_id(db, flashcard_id, user.id)
     if not flashcard:
-        raise HTTPException(status_code=404, detail="Flashcard not found or does not belong to user")
-    review = crud.create_flashcard_review(db, flashcard_id, body.grade, body.latency_ms or 0, user.id)
+        raise HTTPException(
+            status_code=404, detail="Flashcard not found or does not belong to user"
+        )
+    review = crud.create_flashcard_review(
+        db, flashcard_id, body.grade, body.latency_ms or 0, user.id
+    )
     update_ewma_miss(db, flashcard_id, is_miss=(body.grade < 4))
     update_flashcard_stats_from_reviews(db, flashcard_id)
     return {"review": review}
 
+
 @router.get("/{stack_id}/learn", response_model=List[FlashcardSchema])
-async def get_flashcards_due(stack_id: uuid.UUID, user = Depends(get_current_user), db: Session = Depends(get_db)):
+async def get_flashcards_due(
+    stack_id: uuid.UUID, user=Depends(get_current_user), db: Session = Depends(get_db)
+):
     flashcards = crud.get_flashcards_by_stack_id(db, stack_id, user.id)
     due_cards = []
     now = datetime.now(timezone.utc)
@@ -68,8 +92,11 @@ async def get_flashcards_due(stack_id: uuid.UUID, user = Depends(get_current_use
     print(len(due_cards), " cards due")
     return due_cards
 
+
 @router.get("/{stack_id}/missed", response_model=List[FlashcardSchema])
-async def get_missed_flashcards(stack_id: uuid.UUID, user = Depends(get_current_user), db: Session = Depends(get_db)):
+async def get_missed_flashcards(
+    stack_id: uuid.UUID, user=Depends(get_current_user), db: Session = Depends(get_db)
+):
     flashcards = crud.get_flashcards_by_stack_id(db, stack_id, user.id)
     missed_cards = []
     for card in flashcards:
@@ -79,47 +106,77 @@ async def get_missed_flashcards(stack_id: uuid.UUID, user = Depends(get_current_
             missed_cards.append(card)
     return missed_cards
 
+
 class CreateFlashcardRequest(BaseModel):
     front: str
     back: str
 
+
 @router.post("/topics/{topic_id}/create_flashcard", response_model=FlashcardSchema)
-async def add_flashcard(topic_id: uuid.UUID, body: CreateFlashcardRequest, user = Depends(get_current_user), db: Session = Depends(get_db)):
+async def add_flashcard(
+    topic_id: uuid.UUID,
+    body: CreateFlashcardRequest,
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     if not body.front or not body.back:
         raise HTTPException(status_code=400, detail="Front and back text are required")
     flashcard = crud.create_flashcard(db, topic_id, body.front, body.back, user.id)
     if flashcard:
         return flashcard
     else:
-        raise HTTPException(status_code=404, detail="Topic not found or does not belong to user")
+        raise HTTPException(
+            status_code=404, detail="Topic not found or does not belong to user"
+        )
+
 
 @router.get("/stack/{stack_id}", response_model=List[FlashcardSchema])
-async def get_flashcards_by_stack(stack_id: uuid.UUID, user = Depends(get_current_user), db: Session = Depends(get_db)):
+async def get_flashcards_by_stack(
+    stack_id: uuid.UUID, user=Depends(get_current_user), db: Session = Depends(get_db)
+):
     try:
         return crud.get_flashcards_by_stack_id(db, stack_id, user.id)
     except ValueError as e:
         print(e)
         raise HTTPException(status_code=404, detail="Stack not found")
 
+
 class EditFlashcardRequest(BaseModel):
     front: str
     back: str
     explanation: str | None = None
 
+
 @router.post("/{flashcard_id}/edit", response_model=FlashcardSchema)
-async def edit_flashcard(flashcard_id: uuid.UUID, body: EditFlashcardRequest, user = Depends(get_current_user), db: Session = Depends(get_db)):
+async def edit_flashcard(
+    flashcard_id: uuid.UUID,
+    body: EditFlashcardRequest,
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     flashcard = crud.get_flashcard_by_id(db, flashcard_id, user.id)
     if not flashcard:
-        raise HTTPException(status_code=404, detail="Flashcard not found or does not belong to user")
+        raise HTTPException(
+            status_code=404, detail="Flashcard not found or does not belong to user"
+        )
     updated = crud.edit_flashcard(db, flashcard_id, body.front, body.back, user.id)
     if body.explanation is not None:
-        updated = crud.add_flashcard_explanation(db, flashcard_id, body.explanation, user.id)
+        updated = crud.add_flashcard_explanation(
+            db, flashcard_id, body.explanation, user.id
+        )
     return updated
 
+
 @router.post("/{flashcard_id}/delete")
-async def delete_flashcard(flashcard_id: uuid.UUID, user = Depends(get_current_user), db: Session = Depends(get_db)):
+async def delete_flashcard(
+    flashcard_id: uuid.UUID,
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     flashcard = crud.get_flashcard_by_id(db, flashcard_id, user.id)
     if not flashcard:
-        raise HTTPException(status_code=404, detail="Flashcard not found or does not belong to user")
+        raise HTTPException(
+            status_code=404, detail="Flashcard not found or does not belong to user"
+        )
     crud.delete_flashcard(db, flashcard_id, user.id)
     return {"detail": "Flashcard deleted successfully"}

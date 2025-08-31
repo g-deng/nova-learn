@@ -4,10 +4,13 @@ import json
 from typing import List
 
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
-model = "z-ai/glm-4.5-air:free" # "google/gemini-2.0-flash-exp:free" #  # "openai/gpt-3.5-turbo" "openai/gpt-oss-20b:free"
+model = "z-ai/glm-4.5-air:free"  # "google/gemini-2.0-flash-exp:free" #  # "openai/gpt-3.5-turbo" "openai/gpt-oss-20b:free"
 temperature = 0.2
 
-async def extract_topics(subject: str, description: str | None, avoid_topics: List[str] = []) -> dict:
+
+async def extract_topics(
+    subject: str, description: str | None, avoid_topics: List[str] = []
+) -> dict:
     prompt = (
         f"Subject: {subject}\n"
         f"Description: {description}\n\n"
@@ -15,7 +18,9 @@ async def extract_topics(subject: str, description: str | None, avoid_topics: Li
         "For each topic, return a short 1-2 sentence description explaining it. "
         "Format your output as a JSON object where keys are the topic names."
         "and values are the short descriptions. Do not include extra explanation outside the JSON object."
-        "The following topics have already been extracted. Do not extract thm: " + ", ".join(avoid_topics) + "\n\n"
+        "The following topics have already been extracted. Do not extract thm: "
+        + ", ".join(avoid_topics)
+        + "\n\n"
     )
 
     headers = {
@@ -24,32 +29,35 @@ async def extract_topics(subject: str, description: str | None, avoid_topics: Li
 
     payload = {
         "model": model,
-        "messages": [
-            {"role": "user", "content": prompt}
-        ],
-        "temperature": temperature
+        "messages": [{"role": "user", "content": prompt}],
+        "temperature": temperature,
     }
 
     async with httpx.AsyncClient() as client:
         response = await client.post(
             "https://openrouter.ai/api/v1/chat/completions",
             json=payload,
-            headers=headers
+            headers=headers,
         )
 
     try:
-        content = response.json()["choices"][0]["message"]["content"].strip().replace("'", '"')
+        content = (
+            response.json()["choices"][0]["message"]["content"]
+            .strip()
+            .replace("'", '"')
+        )
         if not content.startswith("{") or not content.endswith("}"):
             start = content.find("{")
             end = content.rfind("}")
             if start == -1 or end == -1:
                 raise ValueError("Invalid JSON format")
-            content = content[start:end + 1]
+            content = content[start : end + 1]
         print("Content received:", content)
         topics_with_descriptions = json.loads(content)
         return {"topics": topics_with_descriptions}
     except Exception as e:
         return {"error": str(e), "raw_output": response.text}
+
 
 async def infer_topic_dependencies(topics: List[str]) -> List[List[str]]:
     prompt = (
@@ -67,10 +75,8 @@ async def infer_topic_dependencies(topics: List[str]) -> List[List[str]]:
 
     payload = {
         "model": model,
-        "messages": [
-            {"role": "user", "content": prompt}
-        ],
-        "temperature": temperature
+        "messages": [{"role": "user", "content": prompt}],
+        "temperature": temperature,
     }
 
     print("Attempting to infer dependencies:")
@@ -79,25 +85,42 @@ async def infer_topic_dependencies(topics: List[str]) -> List[List[str]]:
         response = await client.post(
             "https://openrouter.ai/api/v1/chat/completions",
             json=payload,
-            headers=headers
+            headers=headers,
         )
 
     try:
         content = response.json()["choices"][0]["message"]["content"]
         edges = json.loads(content.replace("'", '"'))
-        if isinstance(edges, list) and all(isinstance(pair, list) and len(pair) == 2 for pair in edges):
+        if isinstance(edges, list) and all(
+            isinstance(pair, list) and len(pair) == 2 for pair in edges
+        ):
             return edges
         else:
             raise ValueError("Unexpected format")
     except Exception as e:
         print("Error parsing response:", e)
         return []
-    
 
-async def extract_flashcards(topic: str, num_cards: int = 10, avoid_fronts: List[str] = [], prompt: str | None = None) -> List[dict]:
-    avoid_text = "" if not avoid_fronts else ("The following flashcards have already been created. Do not create flashcards with these fronts: " + ", ".join(avoid_fronts) + "\n\n")
+
+async def extract_flashcards(
+    topic: str,
+    num_cards: int = 10,
+    avoid_fronts: List[str] = [],
+    prompt: str | None = None,
+) -> List[dict]:
+    avoid_text = (
+        ""
+        if not avoid_fronts
+        else (
+            "The following flashcards have already been created. Do not create flashcards with these fronts: "
+            + ", ".join(avoid_fronts)
+            + "\n\n"
+        )
+    )
     llm_prompt = (
-        "Generate a set of " + str(num_cards) + " flashcards for the following topic:\n\n"
+        "Generate a set of "
+        + str(num_cards)
+        + " flashcards for the following topic:\n\n"
         f"Topic: {topic}\n\n"
         "Each flashcard should have a 'front' (question/prompt), a 'back' (concise answer that may be in incomplete sentences, prefer 1 sentence or less), and an 'explanation' (2-3 sentence explanation of the answer). "
         "Format your output as a JSON array of objects with 'front', 'back', and 'explanation' fields. "
@@ -111,10 +134,8 @@ async def extract_flashcards(topic: str, num_cards: int = 10, avoid_fronts: List
 
     payload = {
         "model": model,
-        "messages": [
-            {"role": "user", "content": llm_prompt}
-        ],
-        "temperature": temperature
+        "messages": [{"role": "user", "content": llm_prompt}],
+        "temperature": temperature,
     }
 
     print("Attempting to extract flashcards:")
@@ -124,7 +145,7 @@ async def extract_flashcards(topic: str, num_cards: int = 10, avoid_fronts: List
         response = await client.post(
             "https://openrouter.ai/api/v1/chat/completions",
             json=payload,
-            headers=headers
+            headers=headers,
         )
 
     try:
@@ -134,24 +155,38 @@ async def extract_flashcards(topic: str, num_cards: int = 10, avoid_fronts: List
             end = content.rfind("]")
             if start == -1 or end == -1:
                 raise ValueError("Invalid JSON format")
-            content = content[start:end + 1]
+            content = content[start : end + 1]
         cards = json.loads(content)
         print("Cards")
         print(cards)
         # Ensure each card has 'front', 'back', and 'explanation'
-        if isinstance(cards, list) and all(isinstance(card, dict) and "front" in card and "back" in card and "explanation" in card for card in cards):
+        if isinstance(cards, list) and all(
+            isinstance(card, dict)
+            and "front" in card
+            and "back" in card
+            and "explanation" in card
+            for card in cards
+        ):
             return cards
         else:
-            raise ValueError("Unexpected format: missing 'front', 'back', or 'explanation'")
+            raise ValueError(
+                "Unexpected format: missing 'front', 'back', or 'explanation'"
+            )
     except Exception as e:
         print(response.text)
         print("Error parsing response:", e)
         raise ValueError("Failed to extract flashcards")
 
 
-async def create_multiple_choice_exam(title: str, topics: List[str], num_questions: int = 10, prompt: str | None = None) -> List[dict]:
+async def create_multiple_choice_exam(
+    title: str, topics: List[str], num_questions: int = 10, prompt: str | None = None
+) -> List[dict]:
     prompt = (
-        "Generate the questions for a multiple-choice exam titled '" + title + "' with " + str(num_questions) + " questions covering the following topics:\n\n"
+        "Generate the questions for a multiple-choice exam titled '"
+        + title
+        + "' with "
+        + str(num_questions)
+        + " questions covering the following topics:\n\n"
         f"Topics: {topics}\n\n"
         "Each question should have 4 answer choices labeled 'A', 'B', 'C', and 'D', with one correct answer. "
         "Format your output as a JSON array of objects with 'text', 'choices' (a dict of options keyed by letter), 'topic_name' (the name of the topic), and 'answer' (the correct option letter). "
@@ -164,10 +199,8 @@ async def create_multiple_choice_exam(title: str, topics: List[str], num_questio
 
     payload = {
         "model": model,
-        "messages": [
-            {"role": "user", "content": prompt}
-        ],
-        "temperature": temperature
+        "messages": [{"role": "user", "content": prompt}],
+        "temperature": temperature,
     }
 
     print("Attempting to create exam:")
@@ -176,7 +209,7 @@ async def create_multiple_choice_exam(title: str, topics: List[str], num_questio
         response = await client.post(
             "https://openrouter.ai/api/v1/chat/completions",
             json=payload,
-            headers=headers
+            headers=headers,
         )
 
     try:
@@ -186,7 +219,7 @@ async def create_multiple_choice_exam(title: str, topics: List[str], num_questio
             end = content.rfind("]")
             if start == -1 or end == -1:
                 raise ValueError("Invalid JSON format")
-            content = content[start:end + 1]
+            content = content[start : end + 1]
         questions = json.loads(content)
         print("Questions")
         print(questions)

@@ -8,7 +8,7 @@ import {
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
+  FormMessage
 } from "@/components/ui/form"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -21,27 +21,27 @@ const formSchema = z.object({
   title: z.string().min(2).max(50),
   description: z.string().max(200).optional(),
   notes: z.string().max(500).optional(),
-  attach: z.string().url().optional(),
+  attach: z.string().url().optional()
 })
 
 export default function CreateStackPage() {
-  const navigate = useNavigate();
+  const navigate = useNavigate()
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      title: "",
-    },
-  });
+      title: ""
+    }
+  })
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values);
-    const token = localStorage.getItem("authToken");
+    console.log(values)
+    const token = localStorage.getItem("authToken")
     if (!token) {
-      navigate("/login");
-      return;
+      navigate("/login")
+      return
     }
-    console.log(token);
+    console.log(token)
     const res = await axios.post(
       import.meta.env.VITE_BACKEND_URL + "/stacks/add_stack",
       {
@@ -51,27 +51,28 @@ export default function CreateStackPage() {
       {
         headers: {
           Authorization: `Bearer ${token}`
-        },
-      }
-    );
-    if (res.status === 200) {
-      console.log("Stack created successfully");
-      navigate(`/stack/${res.data.id}/edit-topics`, 
-        {
-          state: { description: values.description }
         }
-      );
+      }
+    )
+    if (res.status === 200) {
+      console.log("Stack created successfully")
+      navigate(`/stack/${res.data.id}/edit-topics`, {
+        state: { description: values.description }
+      })
     } else {
-      console.error("Failed to create stack");
+      console.error("Failed to create stack")
     }
-  };
+  }
 
   return (
     <div className="flex flex-col gap-2 items-center justify-center min-h-screen">
       <h1 className="text-2xl font-bold p-4">Create a New Study Stack</h1>
       <Card className="min-w-1/2">
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-6 p-4">
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="flex flex-col gap-6 p-4"
+          >
             <FormField
               control={form.control}
               name="title"
@@ -81,9 +82,7 @@ export default function CreateStackPage() {
                   <FormControl>
                     <Input required placeholder="Biomechanics" {...field} />
                   </FormControl>
-                  <FormDescription>
-                    Name your study stack!
-                  </FormDescription>
+                  <FormDescription>Name your study stack!</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -95,7 +94,11 @@ export default function CreateStackPage() {
                 <FormItem>
                   <FormLabel>Description</FormLabel>
                   <FormControl>
-                    <Input required placeholder="How we quantify and predict the mechanical properties of biological materials." {...field} />
+                    <Input
+                      required
+                      placeholder="How we quantify and predict the mechanical properties of biological materials."
+                      {...field}
+                    />
                   </FormControl>
                   <FormDescription>
                     Describe your study stack, just for you.
@@ -111,7 +114,12 @@ export default function CreateStackPage() {
                 <FormItem>
                   <FormLabel>Study goals and notes</FormLabel>
                   <FormControl>
-                    <Textarea disabled className="resize-none" placeholder="I want to focus on..." {...field} />
+                    <Textarea
+                      disabled
+                      className="resize-none"
+                      placeholder="I want to focus on..."
+                      {...field}
+                    />
                   </FormControl>
                   <FormDescription>
                     Tell Nova what you want to learn.
@@ -141,5 +149,5 @@ export default function CreateStackPage() {
         </Form>
       </Card>
     </div>
-  );
+  )
 }

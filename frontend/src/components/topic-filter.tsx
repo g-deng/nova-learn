@@ -1,16 +1,26 @@
 import api from "@/lib/api"
 import { useEffect, useState } from "react"
 import { useOutletContext } from "react-router-dom"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger
+} from "@/components/ui/popover"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Check, Filter } from "lucide-react"
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command"
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem
+} from "@/components/ui/command"
 import { cn } from "@/lib/utils"
 
 export default function TopicFilter({
   topicFilter,
-  setTopicFilter,
+  setTopicFilter
 }: {
   topicFilter: string[]
   setTopicFilter: (topics: string[]) => void
@@ -42,10 +52,7 @@ export default function TopicFilter({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          className="flex items-center gap-2"
-        >
+        <Button variant="outline" className="flex items-center gap-2">
           <Filter className="h-4 w-4" />
           {topicFilter.length > 0 ? `${topicFilter.length} selected` : "Filter"}
         </Button>
@@ -64,9 +71,7 @@ export default function TopicFilter({
                 <Check
                   className={cn(
                     "h-4 w-4",
-                    topicFilter.includes(topic)
-                      ? "opacity-100"
-                      : "opacity-0"
+                    topicFilter.includes(topic) ? "opacity-100" : "opacity-0"
                   )}
                 />
                 {topic}

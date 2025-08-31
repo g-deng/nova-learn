@@ -1,8 +1,8 @@
-import { Card, CardHeader, CardContent } from "@/components/ui/card";
-import { useState, useEffect } from "react";
-import api from "@/lib/api";
-import { useOutletContext, useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
+import { Card, CardHeader, CardContent } from "@/components/ui/card"
+import { useState, useEffect } from "react"
+import api from "@/lib/api"
+import { useOutletContext, useNavigate } from "react-router-dom"
+import { Button } from "@/components/ui/button"
 import {
   Dialog,
   DialogContent,
@@ -10,7 +10,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
+  DialogTrigger
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -20,58 +20,64 @@ import {
   CommandEmpty,
   CommandGroup,
   CommandInput,
-  CommandItem,
+  CommandItem
 } from "@/components/ui/command"
 import { Badge } from "@/components/ui/badge"
 import { Check } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { ExamInfo } from "@/pages/focus/ExamInfoPage"
-import { Skeleton } from "@/components/ui/skeleton";
-import TopicFilter from "@/components/topic-filter";
-import { Loader2 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton"
+import TopicFilter from "@/components/topic-filter"
+import { Loader2 } from "lucide-react"
 
 export default function ExamListPage() {
-  const [exams, setExams] = useState<ExamInfo[]>([]);
-  const [filteredExams, setFilteredExams] = useState<ExamInfo[]>([]);
-  const [topicFilter, setTopicFilter] = useState<string[]>([]);
-  const [loadingExams, setLoadingExams] = useState(false);
-  const [openCreator, setOpenCreator] = useState(false);
-  const stackId = useOutletContext<string>();
+  const [exams, setExams] = useState<ExamInfo[]>([])
+  const [filteredExams, setFilteredExams] = useState<ExamInfo[]>([])
+  const [topicFilter, setTopicFilter] = useState<string[]>([])
+  const [loadingExams, setLoadingExams] = useState(false)
+  const [openCreator, setOpenCreator] = useState(false)
+  const stackId = useOutletContext<string>()
 
   useEffect(() => {
-    setFilteredExams(exams.filter(exam => {
-      if (topicFilter.length === 0) return true;
-      return topicFilter.every(topic => exam.topics.includes(topic));
-    }));
-  }, [exams, topicFilter]);
+    setFilteredExams(
+      exams.filter((exam) => {
+        if (topicFilter.length === 0) return true
+        return topicFilter.every((topic) => exam.topics.includes(topic))
+      })
+    )
+  }, [exams, topicFilter])
 
   useEffect(() => {
     const getExams = async () => {
       try {
-        setLoadingExams(true);
-        const response = await api.get(`/exams/${stackId}/list`);
-        setExams(response.data.map((examInfo: any) => {
-          return {
-            id: examInfo.id,
-            name: examInfo.name,
-            topics: examInfo.topics,
-            createdAt: examInfo.created_at,
-            bestAttempt: examInfo.best_attempt ? {
-              id: examInfo.best_attempt.id,
-              score: examInfo.best_attempt.score,
-              scoredQuestions: examInfo.best_attempt.scored_questions
-            } : examInfo
-          };
-        }));
-        console.log(response.data);
+        setLoadingExams(true)
+        const response = await api.get(`/exams/${stackId}/list`)
+        setExams(
+          response.data.map((examInfo: any) => {
+            return {
+              id: examInfo.id,
+              name: examInfo.name,
+              topics: examInfo.topics,
+              createdAt: examInfo.created_at,
+              bestAttempt: examInfo.best_attempt
+                ? {
+                    id: examInfo.best_attempt.id,
+                    score: examInfo.best_attempt.score,
+                    scoredQuestions: examInfo.best_attempt.scored_questions
+                  }
+                : examInfo
+            }
+          })
+        )
+        console.log(response.data)
       } catch (error) {
-        console.error("Error fetching exams:", error);
+        console.error("Error fetching exams:", error)
       } finally {
-        setLoadingExams(false);
+        setLoadingExams(false)
       }
     }
-    getExams();
-  }, [openCreator]);
+    getExams()
+  }, [openCreator, stackId])
 
   return (
     <div className="h-full p-4">
@@ -79,35 +85,37 @@ export default function ExamListPage() {
       <div className="flex justify-between items-center pb-4">
         <h2 className="text-lg font-bold">Exams</h2>
         <div className="flex gap-2">
-          <TopicFilter topicFilter={topicFilter} setTopicFilter={setTopicFilter} />
+          <TopicFilter
+            topicFilter={topicFilter}
+            setTopicFilter={setTopicFilter}
+          />
           <ExamCreator open={openCreator} setOpen={setOpenCreator} />
         </div>
       </div>
       {/* Exam List */}
       <div className="h-full overflow-y-auto">
-      {!loadingExams && filteredExams.length === 0 &&
-        <div>
-          <p>No exams found</p>
-        </div>
-      }
-      {loadingExams ? (
-        <div className="grid grid-cols-1 gap-4">
-          {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-32 w-full" />
-          ))}
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 gap-4">
-          {filteredExams.map((exam) => (
-            <ExamLine key={exam.id} {...exam} />
-          ))}
-        </div>
-      )}
+        {!loadingExams && filteredExams.length === 0 && (
+          <div>
+            <p>No exams found</p>
+          </div>
+        )}
+        {loadingExams ? (
+          <div className="grid grid-cols-1 gap-4">
+            {[1, 2, 3].map((i) => (
+              <Skeleton key={i} className="h-32 w-full" />
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-4">
+            {filteredExams.map((exam) => (
+              <ExamLine key={exam.id} {...exam} />
+            ))}
+          </div>
+        )}
       </div>
     </div>
-  );
+  )
 }
-
 
 function ExamLine({ id, name, topics, createdAt, bestAttempt }: ExamInfo) {
   const navigate = useNavigate()
@@ -117,7 +125,9 @@ function ExamLine({ id, name, topics, createdAt, bestAttempt }: ExamInfo) {
       <CardHeader className="flex flex-row justify-between items-center">
         <div>
           <h2 className="font-medium">{name}</h2>
-          <p className="text-sm text-muted-foreground">{new Date(createdAt).toLocaleString()}</p>
+          <p className="text-sm text-muted-foreground">
+            {new Date(createdAt).toLocaleString()}
+          </p>
         </div>
         {topics && topics.length > 0 && (
           <div className="flex flex-wrap justify-end gap-1 mt-2">
@@ -132,36 +142,53 @@ function ExamLine({ id, name, topics, createdAt, bestAttempt }: ExamInfo) {
 
       <CardContent className="flex flex-row items-center justify-between gap-4">
         <div className="flex flex-row gap-2">
-          <Button className="h-6" variant="outline" onClick={() => navigate(`${id}`)}>View Exam</Button>
-          <Button className="h-6" onClick={() => navigate(`${id}/take`)}>Take Exam</Button>
+          <Button
+            className="h-6"
+            variant="outline"
+            onClick={() => navigate(`${id}`)}
+          >
+            View Exam
+          </Button>
+          <Button className="h-6" onClick={() => navigate(`${id}/take`)}>
+            Take Exam
+          </Button>
         </div>
-        {bestAttempt?.score && <Badge>Best: {bestAttempt.score} / {bestAttempt.scoredQuestions}</Badge>}
+        {bestAttempt?.score && (
+          <Badge>
+            Best: {bestAttempt.score} / {bestAttempt.scoredQuestions}
+          </Badge>
+        )}
       </CardContent>
     </Card>
   )
 }
 
-
-function ExamCreator({ open, setOpen }: { open: boolean, setOpen: (open: boolean) => void }) {
+function ExamCreator({
+  open,
+  setOpen
+}: {
+  open: boolean
+  setOpen: (open: boolean) => void
+}) {
   const [title, setTitle] = useState("")
   const [prompt, setPrompt] = useState("")
   const [numQuestions, setNumQuestions] = useState([5])
   const [selectedTopics, setSelectedTopics] = useState<string[]>([])
-  const [generating, setGenerating] = useState(false);
-  const [topics, setTopics] = useState<string[]>([]);
-  const stackId = useOutletContext<string>();
+  const [generating, setGenerating] = useState(false)
+  const [topics, setTopics] = useState<string[]>([])
+  const stackId = useOutletContext<string>()
 
   useEffect(() => {
     const getTopics = async () => {
       try {
-        const response = await api.get(`stacks/${stackId}/topics`);
-        setTopics(response.data.map((topic: { name: string }) => topic.name));
+        const response = await api.get(`stacks/${stackId}/topics`)
+        setTopics(response.data.map((topic: { name: string }) => topic.name))
       } catch (error) {
-        console.error("Error fetching topics:", error);
+        console.error("Error fetching topics:", error)
       }
-    };
-    getTopics();
-  }, [stackId]);
+    }
+    getTopics()
+  }, [stackId])
 
   const toggleTopic = (topic: string) => {
     setSelectedTopics((prev) =>
@@ -171,18 +198,18 @@ function ExamCreator({ open, setOpen }: { open: boolean, setOpen: (open: boolean
 
   const handleSubmit = async () => {
     try {
-      setGenerating(true);
+      setGenerating(true)
       await api.post(`/exams/${stackId}/generate`, {
         title,
         topics: selectedTopics,
         num_questions: numQuestions[0],
-        prompt,
-      });
-      setOpen(false);
+        prompt
+      })
+      setOpen(false)
     } catch (error) {
-      console.error("Error creating exam:", error);
+      console.error("Error creating exam:", error)
     } finally {
-      setGenerating(false);
+      setGenerating(false)
     }
   }
 
@@ -201,7 +228,9 @@ function ExamCreator({ open, setOpen }: { open: boolean, setOpen: (open: boolean
 
         {/* Title */}
         <div className="space-y-2">
-          <Label htmlFor="title">Title<span className="text-red-500">*</span></Label>
+          <Label htmlFor="title">
+            Title<span className="text-red-500">*</span>
+          </Label>
           <Input
             id="title"
             value={title}
@@ -219,30 +248,31 @@ function ExamCreator({ open, setOpen }: { open: boolean, setOpen: (open: boolean
           <div className="flex flex-row justify-between">
             <p className="text-sm text-muted-foreground">
               Selected:{" "}
-              {selectedTopics.length > 0
-                ? selectedTopics.join(", ")
-                : "None"}
+              {selectedTopics.length > 0 ? selectedTopics.join(", ") : "None"}
             </p>
-            {selectedTopics.length > 0 && <p
-              className="text-sm text-muted-foreground underline cursor-pointer"
-              onClick={() => setSelectedTopics([])}>
-              Deselect All
-            </p>}
-            {selectedTopics.length === 0 && <p
-              className="text-sm text-muted-foreground underline cursor-pointer"
-              onClick={() => setSelectedTopics(topics)}>
-              Select All
-            </p>}
+            {selectedTopics.length > 0 && (
+              <p
+                className="text-sm text-muted-foreground underline cursor-pointer"
+                onClick={() => setSelectedTopics([])}
+              >
+                Deselect All
+              </p>
+            )}
+            {selectedTopics.length === 0 && (
+              <p
+                className="text-sm text-muted-foreground underline cursor-pointer"
+                onClick={() => setSelectedTopics(topics)}
+              >
+                Select All
+              </p>
+            )}
           </div>
           <Command>
             <CommandInput placeholder="Search topics..." />
             <CommandEmpty>No topics found.</CommandEmpty>
             <CommandGroup className="max-h-36 overflow-y-auto">
               {topics.map((topic) => (
-                <CommandItem
-                  key={topic}
-                  onSelect={() => toggleTopic(topic)}
-                >
+                <CommandItem key={topic} onSelect={() => toggleTopic(topic)}>
                   <Check
                     className={cn(
                       "mr-2 h-4 w-4",
@@ -256,7 +286,6 @@ function ExamCreator({ open, setOpen }: { open: boolean, setOpen: (open: boolean
               ))}
             </CommandGroup>
           </Command>
-
         </div>
 
         {/* Number of Questions */}
@@ -285,9 +314,7 @@ function ExamCreator({ open, setOpen }: { open: boolean, setOpen: (open: boolean
         <DialogFooter>
           <Button
             disabled={
-              generating ||
-              title.trim() === "" ||
-              selectedTopics.length === 0
+              generating || title.trim() === "" || selectedTopics.length === 0
             }
             onClick={handleSubmit}
           >
@@ -299,4 +326,3 @@ function ExamCreator({ open, setOpen }: { open: boolean, setOpen: (open: boolean
     </Dialog>
   )
 }
-

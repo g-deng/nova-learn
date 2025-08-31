@@ -8,70 +8,71 @@ import {
   FormItem,
   FormLabel,
   FormControl,
-  FormMessage,
+  FormMessage
 } from "@/components/ui/form"
 import { Button } from "@/components/ui/button"
-import {
-  RadioGroup,
-  RadioGroupItem,
-} from "@/components/ui/radio-group"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Card, CardContent } from "@/components/ui/card"
 import api from "@/lib/api"
-import { useNavigate, useOutletContext, useParams } from "react-router-dom";
+import { useNavigate, useOutletContext, useParams } from "react-router-dom"
 import { Skeleton } from "@/components/ui/skeleton"
 
 type Question = {
-  id: string;
-  text: string;
-  option_a: string;
-  option_b: string;
-  option_c: string;
-  option_d: string;
-  answer: "A" | "B" | "C" | "D";
+  id: string
+  text: string
+  option_a: string
+  option_b: string
+  option_c: string
+  option_d: string
+  answer: "A" | "B" | "C" | "D"
 }
 
 export default function ExamPage() {
-  const [examName, setExamName] = useState("");
+  const [examName, setExamName] = useState("")
   const [loadingQuestions, setLoadingQuestions] = useState(false)
-  const [questions, setQuestions] = useState<Question[]>([]);
-  const navigate = useNavigate();
-  const { examId } = useParams<{ examId: string }>();
-  const stackId = useOutletContext<string>();
+  const [questions, setQuestions] = useState<Question[]>([])
+  const navigate = useNavigate()
+  const { examId } = useParams<{ examId: string }>()
+  const stackId = useOutletContext<string>()
 
   useEffect(() => {
     const fetchExamInfo = async () => {
       try {
-        setLoadingQuestions(true);
-        const response = await api.get(`/exams/${examId}/questions`);
-        setQuestions(response.data);
-        const examResponse = await api.get(`/exams/${examId}`);
-        setExamName(examResponse.data.name);
+        setLoadingQuestions(true)
+        const response = await api.get(`/exams/${examId}/questions`)
+        setQuestions(response.data)
+        const examResponse = await api.get(`/exams/${examId}`)
+        setExamName(examResponse.data.name)
       } catch (error) {
-        console.error("Failed to fetch questions:", error);
+        console.error("Failed to fetch questions:", error)
       } finally {
-        setLoadingQuestions(false);
+        setLoadingQuestions(false)
       }
-    };
-    fetchExamInfo();
-  }, [examId]);
-
+    }
+    fetchExamInfo()
+  }, [examId])
 
   return (
     <div className="w-full h-full min-h-0 p-4 overflow-auto">
       <div className="flex items-center justify-between pb-4">
         <h2 className="text-lg font-medium"> {examName}</h2>
-        <Button variant="outline" onClick={() => navigate(`/stack/${stackId}/exams`)}>Back to Exams</Button>
+        <Button
+          variant="outline"
+          onClick={() => navigate(`/stack/${stackId}/exams`)}
+        >
+          Back to Exams
+        </Button>
       </div>
       <div>
         {loadingQuestions ? (
           <div className="space-y-4">
             {[1, 2, 3].map((i) => (
               <Card key={i} className="shadow-md rounded-xl">
-          <CardContent className="p-6 space-y-4">
-            <Skeleton className="h-6 w-2/3 rounded" />
-            <Skeleton className="h-4 w-1/2 rounded" />
-            <Skeleton className="h-4 w-1/2 rounded" />
-          </CardContent>
+                <CardContent className="p-6 space-y-4">
+                  <Skeleton className="h-6 w-2/3 rounded" />
+                  <Skeleton className="h-4 w-1/2 rounded" />
+                  <Skeleton className="h-4 w-1/2 rounded" />
+                </CardContent>
               </Card>
             ))}
           </div>
@@ -87,47 +88,50 @@ export default function ExamPage() {
         )}
       </div>
     </div>
-  );
-
+  )
 }
 
 type ExamFormProps = {
-  questions: Question[];
-  examId: string | undefined;
+  questions: Question[]
+  examId: string | undefined
   stackId: string
 }
 
 function ExamForm({ questions, examId, stackId }: ExamFormProps) {
-  const navigate = useNavigate();
+  const navigate = useNavigate()
   const schema = z.object(
-    Object.fromEntries(questions.map((q) => [q.id, z.string().nonempty("Pick an option")]))
-  );
+    Object.fromEntries(
+      questions.map((q) => [q.id, z.string().nonempty("Pick an option")])
+    )
+  )
 
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
-    defaultValues: Object.fromEntries(questions.map((q) => [q.id, ""])),
-  });
-
+    defaultValues: Object.fromEntries(questions.map((q) => [q.id, ""]))
+  })
 
   const onSubmit = async (values: z.infer<typeof schema>) => {
     try {
       const response = await api.post(`/exams/${examId}/upload_attempt`, {
         question_attempts: questions.map((q) => ({
           question_id: q.id,
-          selected_option: values[q.id],
-        })),
-      });
-      console.log("Attempt submitted successfully:", response.data);
-      navigate(`/stack/${stackId}/exams/${examId}#${response.data.id}`);
+          selected_option: values[q.id]
+        }))
+      })
+      console.log("Attempt submitted successfully:", response.data)
+      navigate(`/stack/${stackId}/exams/${examId}#${response.data.id}`)
     } catch (error) {
-      console.error("Failed to submit attempt:", error);
+      console.error("Failed to submit attempt:", error)
     }
   }
 
   return (
     <div className="h-full w-full min-h-0 mx-auto space-y-6">
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 min-h-0">
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="space-y-6 min-h-0"
+        >
           {questions.map((q, idx) => (
             <Card key={q.id} className="shadow-md rounded-xl">
               <CardContent className="p-6">
@@ -149,14 +153,20 @@ function ExamForm({ questions, examId, stackId }: ExamFormProps) {
                             ["A", q.option_a],
                             ["B", q.option_b],
                             ["C", q.option_c],
-                            ["D", q.option_d],
+                            ["D", q.option_d]
                           ].map(([val, label]) => (
                             <div
                               key={val}
                               className="flex items-center space-x-2"
                             >
-                              <RadioGroupItem value={val} id={`${q.id}-${val}`} />
-                              <label htmlFor={`${q.id}-${val}`} className="text-sm">
+                              <RadioGroupItem
+                                value={val}
+                                id={`${q.id}-${val}`}
+                              />
+                              <label
+                                htmlFor={`${q.id}-${val}`}
+                                className="text-sm"
+                              >
                                 {label}
                               </label>
                             </div>

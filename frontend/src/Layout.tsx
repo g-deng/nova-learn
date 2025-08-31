@@ -1,6 +1,6 @@
-import React from "react";
-import { Outlet } from "react-router-dom";
-import { Button } from "@/components/ui/button";
+import React from "react"
+import { Outlet } from "react-router-dom"
+import { Button } from "@/components/ui/button"
 import {
   Sidebar,
   SidebarContent,
@@ -14,18 +14,16 @@ import {
   SidebarProvider,
   SidebarTrigger,
   useSidebar
-} from "./components/ui/sidebar";
+} from "./components/ui/sidebar"
 
-const items = [
-  { title: "Stacks", url: "/stacks" }
-]
+const items = [{ title: "Stacks", url: "/stacks" }]
 
 function AppSidebar() {
-  const { setOpen } = useSidebar();
+  const { setOpen } = useSidebar()
 
   React.useEffect(() => {
-    setOpen(false);
-  }, [setOpen]);
+    setOpen(false)
+  }, [setOpen])
   return (
     <Sidebar>
       <SidebarHeader />
@@ -47,13 +45,13 @@ function AppSidebar() {
       </SidebarContent>
       <SidebarFooter />
     </Sidebar>
-  );
+  )
 }
 
 export default function Layout() {
   const logout = () => {
-    localStorage.removeItem("authToken");
-    window.location.href = "/login";
+    localStorage.removeItem("authToken")
+    window.location.href = "/login"
   }
 
   return (
@@ -64,7 +62,9 @@ export default function Layout() {
           <header className="flex-none bg-white shadow px-4 py-2 flex items-center justify-between">
             <SidebarTrigger />
             <h1 className="text-xl font-bold">Nova Learn</h1>
-            <Button variant="outline" onClick={logout}>Log out</Button>
+            <Button variant="outline" onClick={logout}>
+              Log out
+            </Button>
           </header>
 
           <main className="flex-1 overflow-auto">
@@ -73,5 +73,5 @@ export default function Layout() {
         </div>
       </SidebarProvider>
     </div>
-  );
+  )
 }

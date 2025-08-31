@@ -7,18 +7,18 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
+  AlertDialogTrigger
 } from "@/components/ui/alert-dialog"
-import { Button } from "./ui/button";
-import { Trash } from "lucide-react";
+import { Button } from "./ui/button"
+import { Trash } from "lucide-react"
 
 type DeletionDialogProps = {
-  triggerLabel: string;
-  title: string;
-  description?: string;
-  onConfirm: () => void;
-  confirmLabel?: string;
-  showIcon?: boolean;
+  triggerLabel: string
+  title: string
+  description?: string
+  onConfirm: () => void
+  confirmLabel?: string
+  showIcon?: boolean
 }
 
 export default function DeletionDialog({
@@ -27,7 +27,7 @@ export default function DeletionDialog({
   description,
   onConfirm,
   confirmLabel = "Delete",
-  showIcon = true,
+  showIcon = true
 }: DeletionDialogProps) {
   return (
     <AlertDialog>

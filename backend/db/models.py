@@ -9,13 +9,18 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 class Base(DeclarativeBase):
     pass
 
+
 class User(Base):
     __tablename__ = "users"
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
     firebase_uid: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
     name: Mapped[str] = mapped_column(Text, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.now(timezone.utc))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.now(timezone.utc)
+    )
 
     study_stacks: Mapped[List["StudyStack"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
@@ -25,49 +30,80 @@ class User(Base):
 class StudyStack(Base):
     __tablename__ = "study_stacks"
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
     user_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str | None] = mapped_column(Text)
 
     user: Mapped["User"] = relationship(back_populates="study_stacks")
-    topics: Mapped[List["Topic"]] = relationship(back_populates="stack", cascade="all, delete-orphan")
-    exams: Mapped[List["Exam"]] = relationship("Exam", back_populates="stack", cascade="all, delete-orphan")
+    topics: Mapped[List["Topic"]] = relationship(
+        back_populates="stack", cascade="all, delete-orphan"
+    )
+    exams: Mapped[List["Exam"]] = relationship(
+        "Exam", back_populates="stack", cascade="all, delete-orphan"
+    )
+    chat_sessions: Mapped[List["ChatSession"]] = relationship(
+        back_populates="stack", cascade="all, delete-orphan"
+    )
 
 
 class Topic(Base):
     __tablename__ = "topics"
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
     stack_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("study_stacks.id", ondelete="CASCADE"), nullable=False, index=True
+        UUID(as_uuid=True),
+        ForeignKey("study_stacks.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str | None] = mapped_column(Text)
 
     stack: Mapped["StudyStack"] = relationship(back_populates="topics")
-    flashcards: Mapped[List["Flashcard"]] = relationship(back_populates="topic", cascade="all, delete-orphan")
+    flashcards: Mapped[List["Flashcard"]] = relationship(
+        back_populates="topic", cascade="all, delete-orphan"
+    )
 
     prerequisites: Mapped[List["TopicDependency"]] = relationship(
         foreign_keys="[TopicDependency.from_topic_id]",
         back_populates="from_topic",
-        cascade="all, delete-orphan"
+        cascade="all, delete-orphan",
     )
     dependents: Mapped[List["TopicDependency"]] = relationship(
         foreign_keys="[TopicDependency.to_topic_id]",
         back_populates="to_topic",
-        cascade="all, delete-orphan"
+        cascade="all, delete-orphan",
     )
-    questions: Mapped[List["Question"]] = relationship("Question", back_populates="topic")
+    questions: Mapped[List["Question"]] = relationship(
+        "Question", back_populates="topic"
+    )
+
 
 class FlashcardReview(Base):
     __tablename__ = "flashcard_reviews"
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    flashcard_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("flashcards.id", ondelete="CASCADE"), nullable=False, index=True)
-    timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.now(timezone.utc))
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    flashcard_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("flashcards.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    timestamp: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.now(timezone.utc)
+    )
     grade: Mapped[int] = mapped_column(nullable=False)
     latency_ms: Mapped[int] = mapped_column(nullable=True)
 
@@ -77,16 +113,25 @@ class FlashcardReview(Base):
 
     flashcard: Mapped["Flashcard"] = relationship(back_populates="flashcard_reviews")
 
+
 class FlashcardStats(Base):
     __tablename__ = "flashcard_stats"
 
-    flashcard_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("flashcards.id", ondelete="CASCADE"), primary_key=True)
+    flashcard_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("flashcards.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
     correct_count: Mapped[int] = mapped_column(nullable=False, default=0)
     wrong_count: Mapped[int] = mapped_column(nullable=False, default=0)
-    last_seen: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_seen: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     ease: Mapped[float] = mapped_column(nullable=False, default=2.5)
     interval_days: Mapped[int] = mapped_column(nullable=False, default=1)
-    due_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    due_date: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     ewma_miss: Mapped[float] = mapped_column(nullable=True, default=None)
 
     flashcard: Mapped["Flashcard"] = relationship(back_populates="flashcard_stats")
@@ -95,27 +140,44 @@ class FlashcardStats(Base):
 class Flashcard(Base):
     __tablename__ = "flashcards"
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
     topic_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("topics.id", ondelete="CASCADE"), nullable=False, index=True
+        UUID(as_uuid=True),
+        ForeignKey("topics.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     front: Mapped[str] = mapped_column(Text, nullable=False)
     back: Mapped[str] = mapped_column(Text, nullable=False)
     explanation: Mapped[str | None] = mapped_column(Text)
 
     topic: Mapped["Topic"] = relationship(back_populates="flashcards")
-    flashcard_reviews: Mapped[List["FlashcardReview"]] = relationship(back_populates="flashcard", cascade="all, delete-orphan")
-    flashcard_stats: Mapped["FlashcardStats"] = relationship(back_populates="flashcard", cascade="all, delete-orphan")
+    flashcard_reviews: Mapped[List["FlashcardReview"]] = relationship(
+        back_populates="flashcard", cascade="all, delete-orphan"
+    )
+    flashcard_stats: Mapped["FlashcardStats"] = relationship(
+        back_populates="flashcard", cascade="all, delete-orphan"
+    )
 
 
 class TopicDependency(Base):
     __tablename__ = "topic_dependencies"
 
     from_topic_id: Mapped[uuid.UUID] = mapped_column(
-        "from", UUID(as_uuid=True), ForeignKey("topics.id", ondelete="CASCADE"), primary_key=True, index=True
+        "from",
+        UUID(as_uuid=True),
+        ForeignKey("topics.id", ondelete="CASCADE"),
+        primary_key=True,
+        index=True,
     )
     to_topic_id: Mapped[uuid.UUID] = mapped_column(
-        "to", UUID(as_uuid=True), ForeignKey("topics.id", ondelete="CASCADE"), primary_key=True, index=True
+        "to",
+        UUID(as_uuid=True),
+        ForeignKey("topics.id", ondelete="CASCADE"),
+        primary_key=True,
+        index=True,
     )
 
     from_topic: Mapped["Topic"] = relationship(
@@ -124,6 +186,7 @@ class TopicDependency(Base):
     to_topic: Mapped["Topic"] = relationship(
         foreign_keys=[to_topic_id], back_populates="dependents"
     )
+
 
 class Exam(Base):
     __tablename__ = "exams"
@@ -168,7 +231,9 @@ class Question(Base):
     option_b: Mapped[str] = mapped_column(Text, nullable=False)
     option_c: Mapped[str] = mapped_column(Text, nullable=False)
     option_d: Mapped[str] = mapped_column(Text, nullable=False)
-    answer: Mapped[str] = mapped_column(String(1), nullable=False) # 'A', 'B', 'C', or 'D'
+    answer: Mapped[str] = mapped_column(
+        String(1), nullable=False
+    )  # 'A', 'B', 'C', or 'D'
     explanation: Mapped[str | None] = mapped_column(Text)
     order: Mapped[int] = mapped_column(nullable=False, default=0)
 
@@ -185,6 +250,7 @@ class Question(Base):
     question_attempts: Mapped[List["QuestionAttempt"]] = relationship(
         back_populates="question", cascade="all, delete-orphan"
     )
+
 
 class ExamAttempt(Base):
     __tablename__ = "exam_attempts"
@@ -209,6 +275,7 @@ class ExamAttempt(Base):
         back_populates="exam_attempt", cascade="all, delete-orphan"
     )
 
+
 class QuestionAttempt(Base):
     __tablename__ = "question_attempts"
 
@@ -232,5 +299,113 @@ class QuestionAttempt(Base):
     scored: Mapped[bool] = mapped_column(nullable=False, default=True)
     manual_credit: Mapped[bool] = mapped_column(nullable=False, default=False)
 
-    exam_attempt: Mapped["ExamAttempt"] = relationship(back_populates="question_attempts")
+    exam_attempt: Mapped["ExamAttempt"] = relationship(
+        back_populates="question_attempts"
+    )
     question: Mapped["Question"] = relationship(back_populates="question_attempts")
+
+
+class ChatSession(Base):
+    __tablename__ = "chat_sessions"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    stack_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("study_stacks.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    title: Mapped[str] = mapped_column(String(255), nullable=False, default="New Chat")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.now(timezone.utc)
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=datetime.now(timezone.utc),
+        onupdate=datetime.now(timezone.utc),
+    )
+
+    stack: Mapped["StudyStack"] = relationship(back_populates="chat_sessions")
+    messages: Mapped[List["ChatMessage"]] = relationship(
+        back_populates="chat_session", cascade="all, delete-orphan"
+    )
+    attachments: Mapped[List["ChatAttachment"]] = relationship(
+        back_populates="chat_session", cascade="all, delete-orphan"
+    )
+    tags: Mapped[List["ChatTag"]] = relationship(
+        back_populates="chat_session", cascade="all, delete-orphan"
+    )
+
+
+class ChatMessage(Base):
+    __tablename__ = "chat_messages"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    chat_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("chat_sessions.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    role: Mapped[str] = mapped_column(
+        String(16),
+        CheckConstraint(
+            "role IN ('system','user','assistant')", name="check_role_valid"
+        ),
+        nullable=False,
+    )
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.now(timezone.utc)
+    )
+
+    chat_session: Mapped["ChatSession"] = relationship(back_populates="messages")
+
+
+class ChatAttachment(Base):
+    __tablename__ = "chat_attachments"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    chat_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("chat_sessions.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    type: Mapped[str] = mapped_column(
+        String(32),
+        CheckConstraint(
+            "type IN ('exam_question','flashcard','topic')",
+            name="check_attachment_type",
+        ),
+        nullable=False,
+    )
+    ref_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.now(timezone.utc)
+    )
+
+    chat_session: Mapped["ChatSession"] = relationship(back_populates="attachments")
+
+
+class ChatTag(Base):
+    __tablename__ = "chat_tags"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    chat_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("chat_sessions.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    tag: Mapped[str] = mapped_column(String(64), nullable=False)
+
+    chat_session: Mapped["ChatSession"] = relationship(back_populates="tags")

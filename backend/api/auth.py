@@ -10,11 +10,14 @@ if not firebase_admin._apps:
     cred = credentials.Certificate("serviceAccountKey.json")
     firebase_admin.initialize_app(cred)
 
+
 async def get_current_user(request: Request, db: Session = Depends(get_db)):
     # print("Checking for current users")
     auth_header = request.headers.get("Authorization")
     if not auth_header or not auth_header.startswith("Bearer "):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing auth token")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing auth token"
+        )
     id_token = auth_header.split(" ")[1]
     try:
         # print("Verifying ID token")
@@ -24,7 +27,9 @@ async def get_current_user(request: Request, db: Session = Depends(get_db)):
         uid = decoded_token.get("uid")
         # print(uid)
         if not uid:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
+            )
         user = crud.get_user_by_firebase_uid(db, uid)
         # print("user found:", user)
         if not user:
@@ -37,4 +42,6 @@ async def get_current_user(request: Request, db: Session = Depends(get_db)):
             decoded_token = auth.verify_id_token(id_token)
         else:
             print(e)
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
+            )

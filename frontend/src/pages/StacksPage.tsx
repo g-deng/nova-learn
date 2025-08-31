@@ -2,46 +2,52 @@ import {
   Card,
   CardDescription,
   CardHeader,
-  CardTitle,
+  CardTitle
 } from "@/components/ui/card"
-import api from "@/lib/api";
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import api from "@/lib/api"
+import { useState, useEffect } from "react"
+import { useNavigate } from "react-router-dom"
 
-function Stack({ name, description, id }: { name: string, description: string, id: string }) {
-  const navigate = useNavigate();
+function Stack({
+  name,
+  description,
+  id
+}: {
+  name: string
+  description: string
+  id: string
+}) {
+  const navigate = useNavigate()
   const handleClick = () => {
-    navigate(`/stack/${id}`);
+    navigate(`/stack/${id}`)
   }
   return (
     <Card onClick={handleClick} className="cursor-pointer">
       <CardHeader>
         <CardTitle>{name}</CardTitle>
-        <CardDescription>
-          {description}
-        </CardDescription>
+        <CardDescription>{description}</CardDescription>
       </CardHeader>
     </Card>
-  );
+  )
 }
 
 export default function StacksPage() {
-  const [stacks, setStacks] = useState([]);
-  const navigate = useNavigate();
+  const [stacks, setStacks] = useState([])
+  const navigate = useNavigate()
 
   useEffect(() => {
     const fetchStacks = async () => {
       try {
-        const res = await api.get("/stacks");
-        console.log("stackList:", res.data);
-        setStacks(res.data);
+        const res = await api.get("/stacks")
+        console.log("stackList:", res.data)
+        setStacks(res.data)
       } catch (error) {
-        console.error("Failed to fetch stacks:", error);
+        console.error("Failed to fetch stacks:", error)
       }
-    };
+    }
 
-    fetchStacks();
-  }, [navigate]);
+    fetchStacks()
+  }, [navigate])
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen">
@@ -58,10 +64,13 @@ export default function StacksPage() {
             id={stack.id}
           />
         ))}
-        <Card onClick={()=>navigate("/create-stack")} className="cursor-pointer bg-gray-100 hover:bg-gray-200 transition-colors items-center text-3xl">
+        <Card
+          onClick={() => navigate("/create-stack")}
+          className="cursor-pointer bg-gray-100 hover:bg-gray-200 transition-colors items-center text-3xl"
+        >
           +
         </Card>
       </div>
     </div>
-  );
+  )
 }

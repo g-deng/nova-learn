@@ -3,6 +3,7 @@ from typing import List, Optional
 import uuid
 from datetime import datetime
 
+
 class FlashcardSchema(BaseModel):
     id: uuid.UUID
     topic_id: uuid.UUID
@@ -27,7 +28,7 @@ class TopicSchema(BaseModel):
     stack_id: uuid.UUID
     name: str
     description: Optional[str]
-    
+
     prerequisites: List[TopicDependencySchema] = []
     dependents: List[TopicDependencySchema] = []
     flashcards: List[FlashcardSchema] = []
@@ -57,6 +58,7 @@ class UserSchema(BaseModel):
     class Config:
         orm_mode = True
 
+
 class QuestionSchema(BaseModel):
     id: uuid.UUID
     exam_id: uuid.UUID
@@ -71,6 +73,7 @@ class QuestionSchema(BaseModel):
 
     class Config:
         orm_mode = True
+
 
 class ExamSchema(BaseModel):
     id: uuid.UUID
@@ -92,6 +95,7 @@ class ExamAttemptSchema(BaseModel):
     class Config:
         orm_mode = True
 
+
 class ExamInfoSchema(BaseModel):
     id: uuid.UUID
     stack_id: uuid.UUID
@@ -112,3 +116,49 @@ class QuestionAttemptSchema(BaseModel):
     is_correct: bool
     scored: bool = True
     manual_credit: bool = False
+
+
+class ChatMessageSchema(BaseModel):
+    id: uuid.UUID
+    chat_id: uuid.UUID
+    role: str  # "system" | "user" | "assistant"
+    content: str
+    created_at: datetime
+
+    class Config:
+        orm_mode = True
+
+
+class ChatAttachmentSchema(BaseModel):
+    id: uuid.UUID
+    chat_id: uuid.UUID
+    type: str  # "exam_question" | "flashcard" | "topic"
+    ref_id: uuid.UUID
+    created_at: datetime
+
+    class Config:
+        orm_mode = True
+
+
+class ChatTagSchema(BaseModel):
+    id: uuid.UUID
+    chat_id: uuid.UUID
+    tag: str
+
+    class Config:
+        orm_mode = True
+
+
+class ChatSessionSchema(BaseModel):
+    id: uuid.UUID
+    stack_id: uuid.UUID
+    title: str
+    created_at: datetime
+    updated_at: datetime
+
+    messages: List[ChatMessageSchema] = []
+    attachments: List[ChatAttachmentSchema] = []
+    tags: List[ChatTagSchema] = []
+
+    class Config:
+        orm_mode = True
