@@ -12,7 +12,7 @@ class FlashcardSchema(BaseModel):
     explanation: Optional[str]
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class TopicDependencySchema(BaseModel):
@@ -20,7 +20,7 @@ class TopicDependencySchema(BaseModel):
     to_topic_id: uuid.UUID
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class TopicSchema(BaseModel):
@@ -34,7 +34,7 @@ class TopicSchema(BaseModel):
     flashcards: List[FlashcardSchema] = []
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class StudyStackSchema(BaseModel):
@@ -45,7 +45,7 @@ class StudyStackSchema(BaseModel):
     topics: List[TopicSchema] = []
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class UserSchema(BaseModel):
@@ -56,7 +56,7 @@ class UserSchema(BaseModel):
     study_stacks: List[StudyStackSchema] = []
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class QuestionSchema(BaseModel):
@@ -72,7 +72,7 @@ class QuestionSchema(BaseModel):
     order: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class ExamSchema(BaseModel):
@@ -82,7 +82,7 @@ class ExamSchema(BaseModel):
     created_at: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class ExamAttemptSchema(BaseModel):
@@ -93,7 +93,7 @@ class ExamAttemptSchema(BaseModel):
     score: Optional[int] = None
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class ExamInfoSchema(BaseModel):
@@ -105,7 +105,7 @@ class ExamInfoSchema(BaseModel):
     best_attempt: Optional[ExamAttemptSchema] = None
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class QuestionAttemptSchema(BaseModel):
@@ -126,7 +126,7 @@ class ChatMessageSchema(BaseModel):
     created_at: datetime
 
     class Config:
-        orm_mode = True
+       from_attributes = True
 
 
 class ChatAttachmentSchema(BaseModel):
@@ -137,7 +137,7 @@ class ChatAttachmentSchema(BaseModel):
     created_at: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class ChatTagSchema(BaseModel):
@@ -146,7 +146,7 @@ class ChatTagSchema(BaseModel):
     tag: str
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class ChatSessionSchema(BaseModel):
@@ -161,4 +161,4 @@ class ChatSessionSchema(BaseModel):
     tags: List[ChatTagSchema] = []
 
     class Config:
-        orm_mode = True
+        from_attributes = True

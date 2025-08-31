@@ -1,6 +1,6 @@
-import React from "react"
-import { Outlet } from "react-router-dom"
-import { Button } from "@/components/ui/button"
+import React from "react";
+import { Outlet } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 import {
   Sidebar,
   SidebarContent,
@@ -14,16 +14,16 @@ import {
   SidebarProvider,
   SidebarTrigger,
   useSidebar
-} from "./components/ui/sidebar"
+} from "./components/ui/sidebar";
 
-const items = [{ title: "Stacks", url: "/stacks" }]
+const items = [{ title: "Stacks", url: "/stacks" }];
 
 function AppSidebar() {
-  const { setOpen } = useSidebar()
+  const { setOpen } = useSidebar();
 
   React.useEffect(() => {
-    setOpen(false)
-  }, [setOpen])
+    setOpen(false);
+  }, [setOpen]);
   return (
     <Sidebar>
       <SidebarHeader />
@@ -45,14 +45,14 @@ function AppSidebar() {
       </SidebarContent>
       <SidebarFooter />
     </Sidebar>
-  )
+  );
 }
 
 export default function Layout() {
   const logout = () => {
-    localStorage.removeItem("authToken")
-    window.location.href = "/login"
-  }
+    localStorage.removeItem("authToken");
+    window.location.href = "/login";
+  };
 
   return (
     <div className="flex h-screen w-screen overflow-hidden">
@@ -73,5 +73,5 @@ export default function Layout() {
         </div>
       </SidebarProvider>
     </div>
-  )
+  );
 }

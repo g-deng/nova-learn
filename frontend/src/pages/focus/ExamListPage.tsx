@@ -1,8 +1,8 @@
-import { Card, CardHeader, CardContent } from "@/components/ui/card"
-import { useState, useEffect } from "react"
-import api from "@/lib/api"
-import { useOutletContext, useNavigate } from "react-router-dom"
-import { Button } from "@/components/ui/button"
+import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { useState, useEffect } from "react";
+import api from "@/lib/api";
+import { useOutletContext, useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -11,47 +11,47 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Slider } from "@/components/ui/slider"
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
 import {
   Command,
   CommandEmpty,
   CommandGroup,
   CommandInput,
   CommandItem
-} from "@/components/ui/command"
-import { Badge } from "@/components/ui/badge"
-import { Check } from "lucide-react"
-import { cn } from "@/lib/utils"
-import type { ExamInfo } from "@/pages/focus/ExamInfoPage"
-import { Skeleton } from "@/components/ui/skeleton"
-import TopicFilter from "@/components/topic-filter"
-import { Loader2 } from "lucide-react"
+} from "@/components/ui/command";
+import { Badge } from "@/components/ui/badge";
+import { Check } from "lucide-react";
+import { cn } from "@/lib/utils";
+import type { ExamInfo } from "@/pages/focus/ExamInfoPage";
+import { Skeleton } from "@/components/ui/skeleton";
+import TopicFilter from "@/components/topic-filter";
+import { Loader2 } from "lucide-react";
 
 export default function ExamListPage() {
-  const [exams, setExams] = useState<ExamInfo[]>([])
-  const [filteredExams, setFilteredExams] = useState<ExamInfo[]>([])
-  const [topicFilter, setTopicFilter] = useState<string[]>([])
-  const [loadingExams, setLoadingExams] = useState(false)
-  const [openCreator, setOpenCreator] = useState(false)
-  const stackId = useOutletContext<string>()
+  const [exams, setExams] = useState<ExamInfo[]>([]);
+  const [filteredExams, setFilteredExams] = useState<ExamInfo[]>([]);
+  const [topicFilter, setTopicFilter] = useState<string[]>([]);
+  const [loadingExams, setLoadingExams] = useState(false);
+  const [openCreator, setOpenCreator] = useState(false);
+  const stackId = useOutletContext<string>();
 
   useEffect(() => {
     setFilteredExams(
       exams.filter((exam) => {
-        if (topicFilter.length === 0) return true
-        return topicFilter.every((topic) => exam.topics.includes(topic))
+        if (topicFilter.length === 0) return true;
+        return topicFilter.every((topic) => exam.topics.includes(topic));
       })
-    )
-  }, [exams, topicFilter])
+    );
+  }, [exams, topicFilter]);
 
   useEffect(() => {
     const getExams = async () => {
       try {
-        setLoadingExams(true)
-        const response = await api.get(`/exams/${stackId}/list`)
+        setLoadingExams(true);
+        const response = await api.get(`/exams/${stackId}/list`);
         setExams(
           response.data.map((examInfo: any) => {
             return {
@@ -66,18 +66,18 @@ export default function ExamListPage() {
                     scoredQuestions: examInfo.best_attempt.scored_questions
                   }
                 : examInfo
-            }
+            };
           })
-        )
-        console.log(response.data)
+        );
+        console.log(response.data);
       } catch (error) {
-        console.error("Error fetching exams:", error)
+        console.error("Error fetching exams:", error);
       } finally {
-        setLoadingExams(false)
+        setLoadingExams(false);
       }
-    }
-    getExams()
-  }, [openCreator, stackId])
+    };
+    getExams();
+  }, [openCreator, stackId]);
 
   return (
     <div className="h-full p-4">
@@ -114,11 +114,11 @@ export default function ExamListPage() {
         )}
       </div>
     </div>
-  )
+  );
 }
 
 function ExamLine({ id, name, topics, createdAt, bestAttempt }: ExamInfo) {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   return (
     <Card>
@@ -160,58 +160,58 @@ function ExamLine({ id, name, topics, createdAt, bestAttempt }: ExamInfo) {
         )}
       </CardContent>
     </Card>
-  )
+  );
 }
 
 function ExamCreator({
   open,
   setOpen
 }: {
-  open: boolean
-  setOpen: (open: boolean) => void
+  open: boolean;
+  setOpen: (open: boolean) => void;
 }) {
-  const [title, setTitle] = useState("")
-  const [prompt, setPrompt] = useState("")
-  const [numQuestions, setNumQuestions] = useState([5])
-  const [selectedTopics, setSelectedTopics] = useState<string[]>([])
-  const [generating, setGenerating] = useState(false)
-  const [topics, setTopics] = useState<string[]>([])
-  const stackId = useOutletContext<string>()
+  const [title, setTitle] = useState("");
+  const [prompt, setPrompt] = useState("");
+  const [numQuestions, setNumQuestions] = useState([5]);
+  const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
+  const [generating, setGenerating] = useState(false);
+  const [topics, setTopics] = useState<string[]>([]);
+  const stackId = useOutletContext<string>();
 
   useEffect(() => {
     const getTopics = async () => {
       try {
-        const response = await api.get(`stacks/${stackId}/topics`)
-        setTopics(response.data.map((topic: { name: string }) => topic.name))
+        const response = await api.get(`stacks/${stackId}/topics`);
+        setTopics(response.data.map((topic: { name: string }) => topic.name));
       } catch (error) {
-        console.error("Error fetching topics:", error)
+        console.error("Error fetching topics:", error);
       }
-    }
-    getTopics()
-  }, [stackId])
+    };
+    getTopics();
+  }, [stackId]);
 
   const toggleTopic = (topic: string) => {
     setSelectedTopics((prev) =>
       prev.includes(topic) ? prev.filter((t) => t !== topic) : [...prev, topic]
-    )
-  }
+    );
+  };
 
   const handleSubmit = async () => {
     try {
-      setGenerating(true)
+      setGenerating(true);
       await api.post(`/exams/${stackId}/generate`, {
         title,
         topics: selectedTopics,
         num_questions: numQuestions[0],
         prompt
-      })
-      setOpen(false)
+      });
+      setOpen(false);
     } catch (error) {
-      console.error("Error creating exam:", error)
+      console.error("Error creating exam:", error);
     } finally {
-      setGenerating(false)
+      setGenerating(false);
     }
-  }
+  };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -324,5 +324,5 @@ function ExamCreator({
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

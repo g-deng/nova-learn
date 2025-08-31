@@ -1,6 +1,6 @@
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import { z } from "zod"
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
 import {
   Form,
   FormControl,
@@ -9,39 +9,39 @@ import {
   FormItem,
   FormLabel,
   FormMessage
-} from "@/components/ui/form"
-import { Card } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
-import axios from "axios"
-import { useNavigate } from "react-router-dom"
+} from "@/components/ui/form";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 const formSchema = z.object({
   title: z.string().min(2).max(50),
   description: z.string().max(200).optional(),
   notes: z.string().max(500).optional(),
   attach: z.string().url().optional()
-})
+});
 
 export default function CreateStackPage() {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: ""
     }
-  })
+  });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values)
-    const token = localStorage.getItem("authToken")
+    console.log(values);
+    const token = localStorage.getItem("authToken");
     if (!token) {
-      navigate("/login")
-      return
+      navigate("/login");
+      return;
     }
-    console.log(token)
+    console.log(token);
     const res = await axios.post(
       import.meta.env.VITE_BACKEND_URL + "/stacks/add_stack",
       {
@@ -53,14 +53,14 @@ export default function CreateStackPage() {
           Authorization: `Bearer ${token}`
         }
       }
-    )
+    );
     if (res.status === 200) {
-      console.log("Stack created successfully")
+      console.log("Stack created successfully");
       navigate(`/stack/${res.data.id}/edit-topics`, {
         state: { description: values.description }
-      })
+      });
     } else {
-      console.error("Failed to create stack")
+      console.error("Failed to create stack");
     }
   }
 
@@ -149,5 +149,5 @@ export default function CreateStackPage() {
         </Form>
       </Card>
     </div>
-  )
+  );
 }

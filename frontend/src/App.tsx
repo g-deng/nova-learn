@@ -3,21 +3,21 @@ import {
   Routes,
   Route,
   Navigate
-} from "react-router-dom"
-import HomePage from "@/pages/HomePage"
-import LoginPage from "@/pages/LoginPage"
-import StacksPage from "@/pages/StacksPage"
-import FocusLayout from "@/FocusLayout"
-import CreateStackPage from "@/pages/CreateStackPage"
-import Layout from "@/Layout"
-import AddTopicsPage from "./pages/EditTopicsPage"
-import AddDependenciesPage from "./pages/EditDependenciesPage"
-import StackLayout from "@/StackLayout"
+} from "react-router-dom";
+import HomePage from "@/pages/HomePage";
+import LoginPage from "@/pages/LoginPage";
+import StacksPage from "@/pages/StacksPage";
+import FocusLayout from "@/FocusLayout";
+import CreateStackPage from "@/pages/CreateStackPage";
+import Layout from "@/Layout";
+import AddTopicsPage from "./pages/EditTopicsPage";
+import AddDependenciesPage from "./pages/EditDependenciesPage";
+import StackLayout from "@/StackLayout";
 
-import FlashcardPage from "@/pages/focus/FlashcardPage"
-import ExamPage from "@/pages/focus/ExamPage"
-import ExamInfoPage from "@/pages/focus/ExamInfoPage"
-import ExamListPage from "@/pages/focus/ExamListPage"
+import FlashcardPage from "@/pages/focus/FlashcardPage";
+import ExamPage from "@/pages/focus/ExamPage";
+import ExamInfoPage from "@/pages/focus/ExamInfoPage";
+import ExamListPage from "@/pages/focus/ExamListPage";
 
 function App() {
   return (
@@ -49,7 +49,7 @@ function App() {
         </Route>
       </Routes>
     </Router>
-  )
+  );
 }
 
-export default App
+export default App;

@@ -18,6 +18,7 @@ from sqlalchemy.orm import joinedload
 from fastapi import HTTPException, status
 from db.models import ChatSession, ChatMessage, ChatAttachment, ChatTag
 
+
 # USERS
 def get_user_by_id(db: Session, user_id: uuid.UUID):
     return db.query(User).filter(User.id == user_id).first()
@@ -667,7 +668,6 @@ def update_question_attempt_scoring(
 # CHAT
 
 
-
 def get_chat_by_id(db: Session, chat_id: uuid.UUID, user_id: uuid.UUID) -> ChatSession:
     chat = (
         db.query(ChatSession)
@@ -690,7 +690,7 @@ def get_chat_by_id(db: Session, chat_id: uuid.UUID, user_id: uuid.UUID) -> ChatS
 def create_chat_session(
     db: Session, stack_id: uuid.UUID, user_id: uuid.UUID, title: str = "New Chat"
 ) -> ChatSession:
-    get_stack_by_id(db, stack_id, user_id)  # ensure ownership
+    get_stack_by_id(db, stack_id, user_id)
     chat = ChatSession(stack_id=stack_id, title=title)
     db.add(chat)
     db.commit()
@@ -701,7 +701,7 @@ def create_chat_session(
 def list_chat_sessions(
     db: Session, stack_id: uuid.UUID, user_id: uuid.UUID
 ) -> list[ChatSession]:
-    get_stack_by_id(db, stack_id, user_id)  # ensure ownership
+    get_stack_by_id(db, stack_id, user_id)
     return db.query(ChatSession).filter(ChatSession.stack_id == stack_id).all()
 
 
@@ -742,3 +742,40 @@ def add_tag_to_chat(
     db.commit()
     db.refresh(tag_obj)
     return tag_obj
+
+
+def hydrate_attachments(
+    db: Session, chat_id: uuid.UUID, user_id: uuid.UUID
+) -> list[dict]:
+    chat = get_chat_by_id(db, chat_id, user_id)
+
+    hydrated = []
+    for att in chat.attachments:
+        if att.type == "exam_question":
+            q = db.query(Question).filter(Question.id == att.ref_id).first()
+            if q:
+                hydrated.append(
+                    {
+                        "type": "exam_question",
+                        "text": f"{q.text}\nA: {q.option_a}\nB: {q.option_b}\nC: {q.option_c}\nD: {q.option_d}\nCorrect Answer: {q.answer}",
+                    }
+                )
+        elif att.type == "flashcard":
+            f = db.query(Flashcard).filter(Flashcard.id == att.ref_id).first()
+            if f:
+                hydrated.append(
+                    {
+                        "type": "flashcard",
+                        "text": f"Front: {f.front}\nBack: {f.back}\nExplanation: {f.explanation or ''}",
+                    }
+                )
+        elif att.type == "topic":
+            t = db.query(Topic).filter(Topic.id == att.ref_id).first()
+            if t:
+                hydrated.append(
+                    {
+                        "type": "topic",
+                        "text": f"Topic: {t.name}\nDescription: {t.description or ''}",
+                    }
+                )
+    return hydrated

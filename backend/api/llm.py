@@ -231,3 +231,84 @@ async def create_multiple_choice_exam(
         print("Error parsing response:", e)
         print(response.text)
         return []
+
+
+async def chat_with_context(
+    messages: List[dict],
+    attachments: List[dict] | None = None,
+    model_name: str = model,
+    temperature: float = temperature,
+) -> str:
+    headers = {
+        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+    }
+
+    # If attachments exist, prepend a concise system message
+    system_prompt = None
+    if attachments:
+        attachment_texts = []
+        for a in attachments:
+            if a["type"] == "exam_question":
+                attachment_texts.append(f"Exam Question: {a['text']}")
+            elif a["type"] == "flashcard":
+                attachment_texts.append(f"Flashcard: {a['text']}")
+            elif a["type"] == "topic":
+                attachment_texts.append(f"Topic: {a['text']}")
+        system_prompt = {
+            "role": "system",
+            "content": (
+                "The user has attached the following context. "
+                "Respond concisely, maximum 5 sentences.\n\n"
+                + "\n".join(attachment_texts)
+            ),
+        }
+
+    final_messages = []
+    if system_prompt:
+        final_messages.append(system_prompt)
+    final_messages.extend(messages)
+
+    payload = {
+        "model": model_name,
+        "messages": final_messages,
+        "temperature": 0.6,
+    }
+
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            "https://openrouter.ai/api/v1/chat/completions",
+            json=payload,
+            headers=headers,
+        )
+
+    try:
+        content = response.json()["choices"][0]["message"]["content"].strip()
+        return content
+    except Exception as e:
+        print("Error in chat_with_context:", e)
+        print("Raw response:", response.text)
+        raise
+
+
+async def generate_chat_title(messages: list[dict]) -> str:
+    headers = {"Authorization": f"Bearer {OPENROUTER_API_KEY}"}
+    payload = {
+        "model": model,
+        "messages": [
+            {
+                "role": "system",
+                "content": (
+                    "You are to generate a short, descriptive title (3-6 words) "
+                    "for the following chat. Return only the title, no quotes, no punctuation."
+                ),
+            },
+            {"role": "user", "content": "\n".join([m["content"] for m in messages[:3]])},
+        ],
+        "temperature": 0.5,
+    }
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            "https://openrouter.ai/api/v1/chat/completions", json=payload, headers=headers
+        )
+    return response.json()["choices"][0]["message"]["content"].strip()
+

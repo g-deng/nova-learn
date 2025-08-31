@@ -1,52 +1,52 @@
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle
-} from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { useState } from "react"
-import { loginWithEmail, loginWithGoogle, registerWithEmail } from "@/lib/auth"
-import { useNavigate } from "react-router-dom"
+} from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useState } from "react";
+import { loginWithEmail, loginWithGoogle, registerWithEmail } from "@/lib/auth";
+import { useNavigate } from "react-router-dom";
 
 export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const navigate = useNavigate()
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const navigate = useNavigate();
 
   const handleEmailLogin = async () => {
     try {
-      const userCred = await loginWithEmail(email, password)
-      const user = userCred.user
-      const token = await user.getIdToken()
-      localStorage.setItem("authToken", token)
-      console.log("Login success:", user)
-      navigate("/stacks")
+      const userCred = await loginWithEmail(email, password);
+      const user = userCred.user;
+      const token = await user.getIdToken();
+      localStorage.setItem("authToken", token);
+      console.log("Login success:", user);
+      navigate("/stacks");
     } catch (err) {
-      console.error(err)
+      console.error(err);
     }
-  }
+  };
 
   const handleGoogleLogin = async () => {
     try {
-      const userCred = await loginWithGoogle()
-      const user = userCred.user
-      const token = await user.getIdToken()
-      localStorage.setItem("authToken", token)
-      console.log("Login success:", user)
-      navigate("/stacks")
+      const userCred = await loginWithGoogle();
+      const user = userCred.user;
+      const token = await user.getIdToken();
+      localStorage.setItem("authToken", token);
+      console.log("Login success:", user);
+      navigate("/stacks");
     } catch (err) {
-      console.error(err)
+      console.error(err);
     }
-  }
+  };
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
@@ -108,47 +108,47 @@ export function LoginForm({
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
 
 export function SignupForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [confirmPassword, setConfirmPassword] = useState("")
-  const [name, setName] = useState("")
-  const navigate = useNavigate()
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [name, setName] = useState("");
+  const navigate = useNavigate();
 
   const handleEmailSignup = async () => {
     try {
-      const userCred = await registerWithEmail(email, password)
-      console.log("Email registration success:", userCred.user)
-      console.log(`${confirmPassword} ${name}`) // TODO: remove this line
+      const userCred = await registerWithEmail(email, password);
+      console.log("Email registration success:", userCred.user);
+      console.log(`${confirmPassword} ${name}`); // TODO: remove this line
       // TODO: handle user profile creation
-      const user = userCred.user
-      const token = await user.getIdToken()
-      localStorage.setItem("authToken", token)
-      navigate("/stacks")
+      const user = userCred.user;
+      const token = await user.getIdToken();
+      localStorage.setItem("authToken", token);
+      navigate("/stacks");
     } catch (err) {
-      console.error(err)
+      console.error(err);
     }
-  }
+  };
 
   const handleGoogleSignup = async () => {
     try {
-      const userCred = await loginWithGoogle()
-      console.log("Google signup success:", userCred.user)
+      const userCred = await loginWithGoogle();
+      console.log("Google signup success:", userCred.user);
       // TODO: handle user profile creation
-      const user = userCred.user
-      const token = await user.getIdToken()
-      localStorage.setItem("authToken", token)
-      navigate("/stacks")
+      const user = userCred.user;
+      const token = await user.getIdToken();
+      localStorage.setItem("authToken", token);
+      navigate("/stacks");
     } catch (err) {
-      console.error(err)
+      console.error(err);
     }
-  }
+  };
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
@@ -226,7 +226,7 @@ export function SignupForm({
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
 
 export default function LoginPage() {
@@ -246,5 +246,5 @@ export default function LoginPage() {
         </TabsContent>
       </Tabs>
     </div>
-  )
+  );
 }

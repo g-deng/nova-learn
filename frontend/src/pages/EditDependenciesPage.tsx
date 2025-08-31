@@ -1,56 +1,56 @@
-import { useNavigate } from "react-router-dom"
-import { useEffect, useState } from "react"
-import axios from "axios"
-import { Button } from "@/components/ui/button"
-import GraphViewer from "@/components/graph-viewer"
+import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import axios from "axios";
+import { Button } from "@/components/ui/button";
+import GraphViewer from "@/components/graph-viewer";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue
-} from "@/components/ui/select"
-import { useOutletContext } from "react-router-dom"
-import { Alert, AlertTitle } from "@/components/ui/alert"
-import { Skeleton } from "@/components/ui/skeleton"
-import type { Node, Link } from "@/components/graph-viewer"
+} from "@/components/ui/select";
+import { useOutletContext } from "react-router-dom";
+import { Alert, AlertTitle } from "@/components/ui/alert";
+import { Skeleton } from "@/components/ui/skeleton";
+import type { Node, Link } from "@/components/graph-viewer";
 
 export default function AddDependenciesPage() {
-  const navigate = useNavigate()
-  const stackId = useOutletContext<string>()
-  const [topics, setTopics] = useState<Node[]>([])
+  const navigate = useNavigate();
+  const stackId = useOutletContext<string>();
+  const [topics, setTopics] = useState<Node[]>([]);
   const [dependencies, setDependencies] = useState<
     { from: string; to: string; fromId: string | null; toId: string | null }[]
-  >([])
-  const [loading, setLoading] = useState(false)
+  >([]);
+  const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState<
     { from: string; to: string; fromId: string | null; toId: string | null }[]
-  >([])
-  const [unsavedChanges, setUnsavedChanges] = useState(false)
+  >([]);
+  const [unsavedChanges, setUnsavedChanges] = useState(false);
 
   useEffect(() => {
     const handler = (e: BeforeUnloadEvent) => {
       if (unsavedChanges) {
-        e.preventDefault()
-        e.returnValue = "" // required for Chrome
+        e.preventDefault();
+        e.returnValue = ""; // required for Chrome
       }
-    }
-    window.addEventListener("beforeunload", handler)
-    return () => window.removeEventListener("beforeunload", handler)
-  }, [unsavedChanges])
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [unsavedChanges]);
 
   useEffect(() => {
-    setUnsavedChanges(JSON.stringify(dependencies) !== JSON.stringify(saved))
-  }, [dependencies, saved])
+    setUnsavedChanges(JSON.stringify(dependencies) !== JSON.stringify(saved));
+  }, [dependencies, saved]);
 
   useEffect(() => {
-    const token = localStorage.getItem("authToken")
+    const token = localStorage.getItem("authToken");
     if (!token) {
-      navigate("/login")
-      return
+      navigate("/login");
+      return;
     }
     const loadExisting = async () => {
-      setLoading(true)
+      setLoading(true);
       try {
         const topicsResult = await axios.get(
           `${import.meta.env.VITE_BACKEND_URL}/stacks/${stackId}/topics`,
@@ -59,11 +59,11 @@ export default function AddDependenciesPage() {
               Authorization: `Bearer ${token}`
             }
           }
-        )
+        );
         const parsedTopics = topicsResult.data.map((t: any) => {
-          return { id: t.id, name: t.name } as Node
-        })
-        setTopics(parsedTopics)
+          return { id: t.id, name: t.name } as Node;
+        });
+        setTopics(parsedTopics);
 
         const dependenciesResult = await axios.get(
           `${import.meta.env.VITE_BACKEND_URL}/stacks/${stackId}/dependencies`,
@@ -72,7 +72,7 @@ export default function AddDependenciesPage() {
               Authorization: `Bearer ${token}`
             }
           }
-        )
+        );
         const parsedDependencies = dependenciesResult.data.map((d: any) => ({
           from:
             parsedTopics.find((t: any) => t.id == d.from_topic_id)?.name ||
@@ -82,30 +82,30 @@ export default function AddDependenciesPage() {
             "error",
           fromId: d.from_topic_id || null,
           toId: d.to_topic_id || null
-        }))
-        setDependencies(parsedDependencies)
-        setSaved(parsedDependencies)
+        }));
+        setDependencies(parsedDependencies);
+        setSaved(parsedDependencies);
       } catch (error) {
-        console.error("Failed to fetch topics:", error)
+        console.error("Failed to fetch topics:", error);
         if (axios.isAxiosError(error)) {
           if (error.response?.status === 401) {
-            navigate("/login")
+            navigate("/login");
           }
         }
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
-    loadExisting()
-  }, [navigate, stackId])
+    };
+    loadExisting();
+  }, [navigate, stackId]);
 
   const generateDependencies = async () => {
-    const token = localStorage.getItem("authToken")
+    const token = localStorage.getItem("authToken");
     if (!token) {
-      navigate("/login")
-      return
+      navigate("/login");
+      return;
     }
-    setLoading(true)
+    setLoading(true);
     try {
       const res = await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/stacks/${stackId}/infer_dependencies`,
@@ -115,31 +115,31 @@ export default function AddDependenciesPage() {
             Authorization: `Bearer ${token}`
           }
         }
-      )
+      );
       const generated = res.data.map((dep: string[]) => ({
         from: dep[0],
         to: dep[1],
         fromId: null,
         toId: null
-      }))
-      setDependencies([...dependencies, ...generated])
+      }));
+      setDependencies([...dependencies, ...generated]);
     } catch (error) {
-      console.error("Failed to generate dependencies:", error)
+      console.error("Failed to generate dependencies:", error);
       if (axios.isAxiosError(error)) {
         if (error.response?.status === 401) {
-          navigate("/login")
+          navigate("/login");
         }
       }
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const submitDependencies = async () => {
-    const token = localStorage.getItem("authToken")
+    const token = localStorage.getItem("authToken");
     if (!token) {
-      navigate("/login")
-      return
+      navigate("/login");
+      return;
     }
 
     try {
@@ -152,8 +152,8 @@ export default function AddDependenciesPage() {
           old_dependencies: saved.reduce(
             (acc, dep) => {
               if (dep.fromId && dep.toId)
-                acc[dep.fromId + "," + dep.toId] = [dep.from, dep.to]
-              return acc
+                acc[dep.fromId + "," + dep.toId] = [dep.from, dep.to];
+              return acc;
             },
             {} as Record<string, [string, string]>
           ),
@@ -172,54 +172,54 @@ export default function AddDependenciesPage() {
             Authorization: `Bearer ${token}`
           }
         }
-      )
-      console.log("Dependencies submitted successfully:", res.data)
+      );
+      console.log("Dependencies submitted successfully:", res.data);
 
       if (res.status === 200) {
         setDependencies(
           dependencies.map((dep) => {
-            const existing = res.data[dep.from + "," + dep.to]
+            const existing = res.data[dep.from + "," + dep.to];
             return existing
               ? { ...dep, fromId: existing[0], toId: existing[1] }
-              : dep
+              : dep;
           })
-        )
-        setSaved(dependencies)
+        );
+        setSaved(dependencies);
       }
     } catch (error) {
-      console.error("Failed to submit dependencies:", error)
+      console.error("Failed to submit dependencies:", error);
       if (axios.isAxiosError(error)) {
         if (error.response?.status === 401) {
-          navigate("/login")
+          navigate("/login");
         }
       }
     }
-  }
+  };
 
   const editToTopic = (index: number, to: string) => {
     setDependencies(
       dependencies.map((dep, i) => (i == index ? { ...dep, to } : dep))
-    )
-  }
+    );
+  };
 
   const editFromTopic = (index: number, from: string) => {
     setDependencies(
       dependencies.map((dep, i) => (i == index ? { ...dep, from } : dep))
-    )
-  }
+    );
+  };
 
   const deleteDependency = (index: number) => {
-    setDependencies(dependencies.filter((_, i) => i !== index))
-  }
+    setDependencies(dependencies.filter((_, i) => i !== index));
+  };
 
   const newDependency = () => {
     setDependencies([
       ...dependencies,
       { from: "", to: "", fromId: null, toId: null }
-    ])
-    console.log(dependencies)
-    console.log(topics)
-  }
+    ]);
+    console.log(dependencies);
+    console.log(topics);
+  };
 
   return (
     <div className="h-full w-full flex border border-red-500">
@@ -302,7 +302,7 @@ export default function AddDependenciesPage() {
         />
       </div>
     </div>
-  )
+  );
 }
 
 export function DependencyLine({
@@ -314,18 +314,18 @@ export function DependencyLine({
   deleteDependency
 }: {
   dependency: {
-    from: string
-    to: string
-    fromId: string | null
-    toId: string | null
-  }
-  index: number
-  topics: Node[]
-  editFromTopic: (index: number, name: string) => void
-  editToTopic: (index: number, description: string) => void
-  deleteDependency: (index: number) => void
+    from: string;
+    to: string;
+    fromId: string | null;
+    toId: string | null;
+  };
+  index: number;
+  topics: Node[];
+  editFromTopic: (index: number, name: string) => void;
+  editToTopic: (index: number, description: string) => void;
+  deleteDependency: (index: number) => void;
 }) {
-  const [touched, setTouched] = useState(false)
+  const [touched, setTouched] = useState(false);
   return (
     <div
       className="flex flex-row items-start"
@@ -371,5 +371,5 @@ export function DependencyLine({
         )}
       </div>
     </div>
-  )
+  );
 }

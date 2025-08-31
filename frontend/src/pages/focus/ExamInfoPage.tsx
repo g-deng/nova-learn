@@ -1,93 +1,93 @@
 // ExamInfoPage.tsx
-import api from "@/lib/api"
-import DeletionDialog from "@/components/deletion-dialog"
-import { useEffect, useState } from "react"
+import api from "@/lib/api";
+import DeletionDialog from "@/components/deletion-dialog";
+import { useEffect, useState } from "react";
 import {
   useLocation,
   useNavigate,
   useOutletContext,
   useParams
-} from "react-router-dom"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { ChevronLeft, Loader2 } from "lucide-react"
-import { Switch } from "@/components/ui/switch"
+} from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { ChevronLeft, Loader2 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue
-} from "@/components/ui/select"
+} from "@/components/ui/select";
 
 export type ExamInfo = {
-  id: string
-  stackId: string
-  name: string
-  createdAt: string
-  topics: string[]
+  id: string;
+  stackId: string;
+  name: string;
+  createdAt: string;
+  topics: string[];
   bestAttempt: {
-    id: string
-    score: number
-    scoredQuestions: number
-  } | null
-}
+    id: string;
+    score: number;
+    scoredQuestions: number;
+  } | null;
+};
 
 export type ExamAttempt = {
-  id: string
-  examId: string
-  completedAt: string
-  scoredQuestions?: number
-  score?: number
-}
+  id: string;
+  examId: string;
+  completedAt: string;
+  scoredQuestions?: number;
+  score?: number;
+};
 
 type Question = {
-  id: string
-  text: string
-  option_a: string
-  option_b: string
-  option_c: string
-  option_d: string
-  answer: "A" | "B" | "C" | "D"
-}
+  id: string;
+  text: string;
+  option_a: string;
+  option_b: string;
+  option_c: string;
+  option_d: string;
+  answer: "A" | "B" | "C" | "D";
+};
 
 type QuestionAttempt = {
-  id: string
-  examAttemptId: string
-  questionId: string
-  selectedOption: string
-  isCorrect: boolean
-  scored: boolean
-  manualCredit: boolean
-}
+  id: string;
+  examAttemptId: string;
+  questionId: string;
+  selectedOption: string;
+  isCorrect: boolean;
+  scored: boolean;
+  manualCredit: boolean;
+};
 
 export default function ExamInfoPage() {
-  const [examInfo, setExamInfo] = useState<ExamInfo | null>(null)
-  const [questions, setQuestions] = useState<Question[]>([])
-  const [examAttempts, setExamAttempts] = useState<ExamAttempt[]>([])
+  const [examInfo, setExamInfo] = useState<ExamInfo | null>(null);
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [examAttempts, setExamAttempts] = useState<ExamAttempt[]>([]);
   const [selectedAttempt, setSelectedAttempt] = useState<ExamAttempt | null>(
     null
-  )
+  );
   const [questionAttempts, setQuestionAttempts] = useState<{
-    [questionId: string]: QuestionAttempt
-  }>({})
-  const [revealAll, setRevealAll] = useState(false)
+    [questionId: string]: QuestionAttempt;
+  }>({});
+  const [revealAll, setRevealAll] = useState(false);
   const [updatedQuestionAttempt, setUpdatedQuestionAttempt] = useState<
     QuestionAttempt[]
-  >([])
-  const [loadingScoring, setLoadingScoring] = useState(false)
-  const [loadingQuestions, setLoadingQuestions] = useState(false)
-  const [updatedCtr, setUpdatedCtr] = useState(0)
-  const navigate = useNavigate()
+  >([]);
+  const [loadingScoring, setLoadingScoring] = useState(false);
+  const [loadingQuestions, setLoadingQuestions] = useState(false);
+  const [updatedCtr, setUpdatedCtr] = useState(0);
+  const navigate = useNavigate();
 
-  const stackId = useOutletContext<string>()
-  const { examId } = useParams<{ examId: string }>()
-  const attemptId = useLocation().hash.slice(1)
+  const stackId = useOutletContext<string>();
+  const { examId } = useParams<{ examId: string }>();
+  const attemptId = useLocation().hash.slice(1);
 
   useEffect(() => {
     const getExamInfo = async () => {
       try {
-        const response = await api.get(`/exams/${examId}/info`)
+        const response = await api.get(`/exams/${examId}/info`);
         setExamInfo({
           id: response.data.id,
           stackId: response.data.stack_id,
@@ -101,8 +101,8 @@ export default function ExamInfoPage() {
                 scoredQuestions: response.data.best_attempt.scored_questions
               }
             : null
-        })
-        const responseAttempts = await api.get(`/exams/${examId}/attempts`)
+        });
+        const responseAttempts = await api.get(`/exams/${examId}/attempts`);
         setExamAttempts(
           responseAttempts.data.map((attempt: any) => ({
             id: attempt.id,
@@ -111,33 +111,33 @@ export default function ExamInfoPage() {
             scoredQuestions: attempt.scored_questions,
             score: attempt.score
           }))
-        )
-        const responseQuestions = await api.get(`/exams/${examId}/questions`)
-        setQuestions(responseQuestions.data)
+        );
+        const responseQuestions = await api.get(`/exams/${examId}/questions`);
+        setQuestions(responseQuestions.data);
       } catch (error) {
-        console.error("Error fetching exam information:", error)
+        console.error("Error fetching exam information:", error);
       }
-    }
-    getExamInfo()
-  }, [stackId, examId, attemptId])
+    };
+    getExamInfo();
+  }, [stackId, examId, attemptId]);
 
   useEffect(() => {
     if (attemptId) {
-      const selected = examAttempts.find((a) => a.id === attemptId)
-      setSelectedAttempt(selected || null)
+      const selected = examAttempts.find((a) => a.id === attemptId);
+      setSelectedAttempt(selected || null);
     }
-  }, [questionAttempts, attemptId, examAttempts])
+  }, [questionAttempts, attemptId, examAttempts]);
 
   useEffect(() => {
     const getSelectedAnswers = async () => {
       try {
-        setLoadingQuestions(true)
-        setQuestionAttempts({})
+        setLoadingQuestions(true);
+        setQuestionAttempts({});
         if (attemptId) {
           const response = await api.get(
             `/exams/attempt/${attemptId}/questions`
-          )
-          const answersMap: { [questionId: string]: QuestionAttempt } = {}
+          );
+          const answersMap: { [questionId: string]: QuestionAttempt } = {};
           response.data.forEach((attempt: any) => {
             answersMap[attempt.question_id] = {
               id: attempt.id,
@@ -147,56 +147,56 @@ export default function ExamInfoPage() {
               isCorrect: attempt.is_correct,
               scored: attempt.scored,
               manualCredit: attempt.manual_credit
-            }
-          })
-          setQuestionAttempts(answersMap)
+            };
+          });
+          setQuestionAttempts(answersMap);
         }
       } catch (error) {
-        console.error("Error fetching question attempts:", error)
+        console.error("Error fetching question attempts:", error);
       } finally {
-        setLoadingQuestions(false)
+        setLoadingQuestions(false);
       }
-    }
-    getSelectedAnswers()
-  }, [selectedAttempt, examAttempts, attemptId])
+    };
+    getSelectedAnswers();
+  }, [selectedAttempt, examAttempts, attemptId]);
 
   const handleTakeExam = () => {
-    navigate("take")
-  }
+    navigate("take");
+  };
   const handleDeleteExam = async () => {
     try {
-      await api.post(`/exams/${examId}/delete`)
-      navigate(`/stack/${stackId}/exams`)
+      await api.post(`/exams/${examId}/delete`);
+      navigate(`/stack/${stackId}/exams`);
     } catch (error) {
-      console.error("Error deleting exam:", error)
+      console.error("Error deleting exam:", error);
     }
-  }
+  };
   const handleDeleteExamAttempt = async () => {
     try {
-      await api.post(`/exams/attempt/${selectedAttempt?.id}/delete`)
+      await api.post(`/exams/attempt/${selectedAttempt?.id}/delete`);
       const updatedAttempts = examAttempts.filter(
         (a) => a.id !== selectedAttempt?.id
-      )
-      setExamAttempts(updatedAttempts)
-      setSelectedAttempt(null)
-      navigate("#")
+      );
+      setExamAttempts(updatedAttempts);
+      setSelectedAttempt(null);
+      navigate("#");
     } catch (error) {
-      console.error("Error deleting exam attempt:", error)
+      console.error("Error deleting exam attempt:", error);
     }
-  }
+  };
   const onSelectionValueChange = (val: string) => {
     if (val == "x") {
-      setSelectedAttempt(null)
-      navigate("#")
+      setSelectedAttempt(null);
+      navigate("#");
     } else {
-      const selected = examAttempts.find((a) => a.id === val)
-      setSelectedAttempt(selected || null)
-      navigate(`#${val}`)
+      const selected = examAttempts.find((a) => a.id === val);
+      setSelectedAttempt(selected || null);
+      navigate(`#${val}`);
     }
-  }
+  };
   const handleUpdateScoring = async () => {
     try {
-      setLoadingScoring(true)
+      setLoadingScoring(true);
       const response = await api.post(
         `/exams/attempt/${selectedAttempt?.id}/update_scoring`,
         {
@@ -205,18 +205,18 @@ export default function ExamInfoPage() {
               question_attempt_id: qs.id,
               scored: qs.scored,
               manual_credit: qs.manualCredit
-            }
+            };
           })
         }
-      )
-      setSelectedAttempt(response.data)
-      setUpdatedCtr((prev) => prev + 1)
+      );
+      setSelectedAttempt(response.data);
+      setUpdatedCtr((prev) => prev + 1);
     } catch (error) {
-      console.error("Error updating question scoring:", error)
+      console.error("Error updating question scoring:", error);
     } finally {
-      setLoadingScoring(false)
+      setLoadingScoring(false);
     }
-  }
+  };
 
   return (
     <div className="w-full h-full min-h-0 p-6 space-y-6 overflow-auto">
@@ -319,7 +319,7 @@ export default function ExamInfoPage() {
                       revealAll={revealAll}
                       setUpdatedQuestionAttempt={setUpdatedQuestionAttempt}
                     />
-                  )
+                  );
                 }
               })}
             {selectedAttempt && (
@@ -338,7 +338,7 @@ export default function ExamInfoPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 function QuestionCard({
@@ -346,14 +346,14 @@ function QuestionCard({
   index,
   revealAll
 }: {
-  question: Question
-  index: number
-  revealAll: boolean
+  question: Question;
+  index: number;
+  revealAll: boolean;
 }) {
-  const [reveal, setReveal] = useState(revealAll)
+  const [reveal, setReveal] = useState(revealAll);
   useEffect(() => {
-    setReveal(revealAll)
-  }, [revealAll])
+    setReveal(revealAll);
+  }, [revealAll]);
 
   return (
     <Card>
@@ -388,7 +388,7 @@ function QuestionCard({
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
 
 function ReviewQuestionCard({
@@ -398,28 +398,28 @@ function ReviewQuestionCard({
   questionAttempt,
   setUpdatedQuestionAttempt: setUpdatedQuestionAttempts
 }: {
-  question: Question
-  index: number
-  revealAll: boolean
-  questionAttempt: QuestionAttempt
+  question: Question;
+  index: number;
+  revealAll: boolean;
+  questionAttempt: QuestionAttempt;
   setUpdatedQuestionAttempt: (
     func: (prev: QuestionAttempt[]) => QuestionAttempt[]
-  ) => void
+  ) => void;
 }) {
-  const [reveal, setReveal] = useState(revealAll)
-  const [giveCredit, setGiveCredit] = useState(questionAttempt.manualCredit)
-  const [unscored, setUnscored] = useState(!questionAttempt.scored)
+  const [reveal, setReveal] = useState(revealAll);
+  const [giveCredit, setGiveCredit] = useState(questionAttempt.manualCredit);
+  const [unscored, setUnscored] = useState(!questionAttempt.scored);
   useEffect(() => {
     if (unscored) {
-      setGiveCredit(false)
+      setGiveCredit(false);
     }
     if (
       questionAttempt &&
       (giveCredit !== questionAttempt.manualCredit ||
         unscored === questionAttempt.scored)
     ) {
-      console.log("diff")
-      console.log(questionAttempt)
+      console.log("diff");
+      console.log(questionAttempt);
       setUpdatedQuestionAttempts((prev) =>
         prev
           .filter((qa) => qa.id !== questionAttempt.id)
@@ -430,17 +430,17 @@ function ReviewQuestionCard({
               scored: !unscored
             }
           ])
-      )
+      );
     } else {
       setUpdatedQuestionAttempts((prev) =>
         prev.filter((qa) => qa.id !== questionAttempt.id)
-      )
+      );
     }
-  }, [giveCredit, unscored, questionAttempt, setUpdatedQuestionAttempts])
+  }, [giveCredit, unscored, questionAttempt, setUpdatedQuestionAttempts]);
 
   useEffect(() => {
-    setReveal(revealAll)
-  }, [revealAll])
+    setReveal(revealAll);
+  }, [revealAll]);
 
   const shading = (val: string) => {
     if (reveal) {
@@ -448,32 +448,32 @@ function ReviewQuestionCard({
         // correct
         if (val === questionAttempt?.selectedOption) {
           // correct, selected
-          return "bg-green-200 dark:bg-green-800 border-2 border-green-500"
+          return "bg-green-200 dark:bg-green-800 border-2 border-green-500";
         } else {
           // correct, not selected
-          return "bg-green-200 dark:bg-green-800"
+          return "bg-green-200 dark:bg-green-800";
         }
       } else {
         // incorrect
         if (val === questionAttempt?.selectedOption) {
           // incorrect, selected
           if (giveCredit) {
-            return "bg-yellow-100 dark:bg-yellow-800 border-2 border-red-500"
+            return "bg-yellow-100 dark:bg-yellow-800 border-2 border-red-500";
           }
-          return "bg-muted border-2 border-red-500"
+          return "bg-muted border-2 border-red-500";
         } else {
           // incorrect, not selected
-          return "bg-muted"
+          return "bg-muted";
         }
       }
     } else {
       if (val === questionAttempt?.selectedOption) {
-        return "bg-muted border-2 border-blue-500"
+        return "bg-muted border-2 border-blue-500";
       } else {
-        return "bg-muted"
+        return "bg-muted";
       }
     }
-  }
+  };
 
   return (
     <Card className={unscored ? "bg-gray-200" : ""}>
@@ -522,5 +522,5 @@ function ReviewQuestionCard({
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }

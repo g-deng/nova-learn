@@ -1,53 +1,53 @@
-import { useEffect, useState } from "react"
-import axios from "axios"
-import { useOutletContext, useNavigate } from "react-router-dom"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
-import { Skeleton } from "@/components/ui/skeleton"
-import { Alert, AlertTitle } from "@/components/ui/alert"
+import { useEffect, useState } from "react";
+import axios from "axios";
+import { useOutletContext, useNavigate } from "react-router-dom";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertTitle } from "@/components/ui/alert";
 
 export default function AddTopicsPage() {
-  const stackId = useOutletContext<string>()
+  const stackId = useOutletContext<string>();
   const [topics, setTopics] = useState<
     { name: string; description: string; id: string | null }[]
-  >([])
-  const [loading, setLoading] = useState(false)
-  const [repeatedNames, setRepeatedNames] = useState<string[]>([]) // repeated names
+  >([]);
+  const [loading, setLoading] = useState(false);
+  const [repeatedNames, setRepeatedNames] = useState<string[]>([]); // repeated names
   const [saved, setSaved] = useState<
     { name: string; description: string; id: string | null }[]
-  >([])
-  const [unsavedChanges, setUnsavedChanges] = useState(false)
-  const navigate = useNavigate()
+  >([]);
+  const [unsavedChanges, setUnsavedChanges] = useState(false);
+  const navigate = useNavigate();
   const guardedNavigate = (path: string) => {
     if (
       !unsavedChanges ||
       window.confirm("Unsaved changes will be lost. Do you want to continue?")
     ) {
-      navigate(path)
+      navigate(path);
     }
-  }
+  };
 
   useEffect(() => {
     const handler = (e: BeforeUnloadEvent) => {
       if (unsavedChanges) {
-        e.preventDefault()
-        e.returnValue = "" // required for Chrome
+        e.preventDefault();
+        e.returnValue = ""; // required for Chrome
       }
-    }
-    window.addEventListener("beforeunload", handler)
-    return () => window.removeEventListener("beforeunload", handler)
-  }, [unsavedChanges])
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [unsavedChanges]);
 
   useEffect(() => {
-    const token = localStorage.getItem("authToken")
+    const token = localStorage.getItem("authToken");
     if (!token) {
-      navigate("/login")
-      return
+      navigate("/login");
+      return;
     }
 
     const loadExisting = async () => {
-      setLoading(true)
+      setLoading(true);
       try {
         const topicsResult = await axios.get(
           `${import.meta.env.VITE_BACKEND_URL}/stacks/${stackId}/topics`,
@@ -56,43 +56,43 @@ export default function AddTopicsPage() {
               Authorization: `Bearer ${token}`
             }
           }
-        )
+        );
         const parsedTopics = topicsResult.data.map((t: any) => {
-          return { name: t.name, description: t.description || "", id: t.id }
-        })
-        setTopics(parsedTopics)
-        setSaved(parsedTopics)
+          return { name: t.name, description: t.description || "", id: t.id };
+        });
+        setTopics(parsedTopics);
+        setSaved(parsedTopics);
       } catch (error) {
-        console.error("Failed to fetch topics:", error)
+        console.error("Failed to fetch topics:", error);
         if (axios.isAxiosError(error)) {
           if (error.response?.status === 401) {
-            navigate("/login")
+            navigate("/login");
           }
         }
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
-    loadExisting()
-  }, [navigate, stackId])
+    loadExisting();
+  }, [navigate, stackId]);
 
   useEffect(() => {
-    const names = new Set<string>()
-    const repeated = []
+    const names = new Set<string>();
+    const repeated = [];
     for (const topic of topics) {
       if (names.has(topic.name)) {
-        repeated.push(topic.name)
+        repeated.push(topic.name);
       } else {
-        names.add(topic.name)
+        names.add(topic.name);
       }
     }
-    setRepeatedNames(repeated)
-  }, [topics])
+    setRepeatedNames(repeated);
+  }, [topics]);
 
   useEffect(() => {
-    setUnsavedChanges(JSON.stringify(topics) !== JSON.stringify(saved))
-  }, [topics, saved])
+    setUnsavedChanges(JSON.stringify(topics) !== JSON.stringify(saved));
+  }, [topics, saved]);
 
   const hasEmptyFields = topics?.some(
     (t) =>
@@ -100,7 +100,7 @@ export default function AddTopicsPage() {
       !t.description ||
       t.name.trim() === "" ||
       t.description.trim() === ""
-  )
+  );
 
   const deleteTopic = (index: number) => {
     if (topics[index]?.id) {
@@ -109,55 +109,55 @@ export default function AddTopicsPage() {
           "Are you sure you want to delete this topic? This action cannot be undone if you save it. Associated flashcards and other data will be lost."
         )
       ) {
-        return
+        return;
       }
     }
-    setTopics(topics?.filter((_, i) => i !== index) || null)
-    console.log("Deleted topic at index:", index)
-    console.log(topics)
-  }
+    setTopics(topics?.filter((_, i) => i !== index) || null);
+    console.log("Deleted topic at index:", index);
+    console.log(topics);
+  };
 
   const editTopicName = (index: number, name: string) => {
     setTopics(
       topics?.map((topic, i) => (i === index ? { ...topic, name } : topic)) ||
         null
-    )
-  }
+    );
+  };
 
   const editTopicDescription = (index: number, description: string) => {
     setTopics(
       topics?.map((topic, i) =>
         i === index ? { ...topic, description } : topic
       ) || null
-    )
-  }
+    );
+  };
 
   const newTopic = () => {
     if (topics && topics.length > 0 && topics[topics.length - 1].name === "")
-      return
-    setTopics([...(topics || []), { name: "", description: "", id: null }])
-  }
+      return;
+    setTopics([...(topics || []), { name: "", description: "", id: null }]);
+  };
 
   const submitTopics = () => {
     if (hasEmptyFields) {
-      alert("Please fill in all fields before submitting.")
-      return
+      alert("Please fill in all fields before submitting.");
+      return;
     }
     if (repeatedNames.length > 0) {
       alert(
         "Cannot have multiple topics with the same name: " +
           repeatedNames.join(", ")
-      )
-      return
+      );
+      return;
     }
-    const token = localStorage.getItem("authToken")
+    const token = localStorage.getItem("authToken");
     if (!token) {
-      navigate("/login")
-      return
+      navigate("/login");
+      return;
     }
 
     if (topics === null) {
-      return
+      return;
     }
 
     const saveTopics = async () => {
@@ -168,15 +168,15 @@ export default function AddTopicsPage() {
             stack_id: stackId,
             new_topics: topics.reduce(
               (acc, topic) => {
-                if (!topic.id) acc[topic.name] = topic.description
-                return acc
+                if (!topic.id) acc[topic.name] = topic.description;
+                return acc;
               },
               {} as Record<string, string>
             ),
             old_topics: topics.reduce(
               (acc, topic) => {
-                if (topic.id) acc[topic.id] = [topic.name, topic.description]
-                return acc
+                if (topic.id) acc[topic.id] = [topic.name, topic.description];
+                return acc;
               },
               {} as Record<string, [string, string]>
             ),
@@ -189,37 +189,37 @@ export default function AddTopicsPage() {
               Authorization: `Bearer ${token}`
             }
           }
-        )
+        );
         if (saveResult.status === 200) {
           for (const name in saveResult.data) {
-            const index = topics.findIndex((t) => t.name === name)
+            const index = topics.findIndex((t) => t.name === name);
             if (index !== -1) {
-              topics[index].id = saveResult.data[name]
+              topics[index].id = saveResult.data[name];
             }
           }
-          setSaved(topics)
+          setSaved(topics);
           // navigate(`/create-stack/${stackId}/dependencies`);
         }
       } catch (error) {
-        console.error("Failed to save topics:", error)
+        console.error("Failed to save topics:", error);
         if (axios.isAxiosError(error)) {
           if (error.response?.status === 401) {
-            navigate("/login")
+            navigate("/login");
           }
         }
       }
-    }
-    saveTopics()
-  }
+    };
+    saveTopics();
+  };
 
   const generateTopics = async () => {
-    console.log("Generating topics...")
-    const token = localStorage.getItem("authToken")
+    console.log("Generating topics...");
+    const token = localStorage.getItem("authToken");
     if (!token) {
-      navigate("/login")
-      return
+      navigate("/login");
+      return;
     }
-    setLoading(true)
+    setLoading(true);
     try {
       const res = await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/stacks/${stackId}/generate_topics`,
@@ -229,28 +229,28 @@ export default function AddTopicsPage() {
             Authorization: `Bearer ${token}`
           }
         }
-      )
-      const topicList = []
+      );
+      const topicList = [];
       for (const topic in res.data) {
         topicList.push({
           name: topic,
           description: res.data[topic] || "",
           id: null
-        })
+        });
       }
-      console.log("Parsed topic list:", topicList)
-      setTopics([...topics, ...topicList])
+      console.log("Parsed topic list:", topicList);
+      setTopics([...topics, ...topicList]);
     } catch (error) {
-      console.error("Failed to generate topics:", error)
+      console.error("Failed to generate topics:", error);
       if (axios.isAxiosError(error)) {
         if (error.response?.status === 401) {
-          navigate("/login")
+          navigate("/login");
         }
       }
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <div className="w-full h-full overflow-auto">
@@ -305,7 +305,7 @@ export default function AddTopicsPage() {
         </Button>
       </div>
     </div>
-  )
+  );
 }
 
 export function TopicLine({
@@ -316,14 +316,14 @@ export function TopicLine({
   editTopicDescription,
   deleteTopic
 }: {
-  topic: { name: string; description: string; id: string | null }
-  index: number
-  repeatedNames: string[]
-  editTopicName: (index: number, name: string) => void
-  editTopicDescription: (index: number, description: string) => void
-  deleteTopic: (index: number) => void
+  topic: { name: string; description: string; id: string | null };
+  index: number;
+  repeatedNames: string[];
+  editTopicName: (index: number, name: string) => void;
+  editTopicDescription: (index: number, description: string) => void;
+  deleteTopic: (index: number) => void;
 }) {
-  const [touched, setTouched] = useState(0)
+  const [touched, setTouched] = useState(0);
   return (
     <div className="flex-row items-start">
       <div className={"flex items-center justify-between p-2 gap-6 border-b"}>
@@ -332,12 +332,12 @@ export function TopicLine({
           defaultValue={topic.name}
           className={"w-[200px] " + (topic.id ? "bg-gray-200" : "")}
           onFocus={() => {
-            setTouched(touched + 1)
-            console.log("focus")
+            setTouched(touched + 1);
+            console.log("focus");
           }}
           onBlur={(e) => {
-            editTopicName(index, e.target.value)
-            setTouched(touched - 1)
+            editTopicName(index, e.target.value);
+            setTouched(touched - 1);
           }}
         />
         <Textarea
@@ -345,8 +345,8 @@ export function TopicLine({
           className={topic.id ? "bg-gray-200" : ""}
           onFocus={() => setTouched(touched + 1)}
           onBlur={(e) => {
-            editTopicDescription(index, e.target.value)
-            setTouched(touched - 1)
+            editTopicDescription(index, e.target.value);
+            setTouched(touched - 1);
           }}
         />
         <Button onClick={() => deleteTopic(index)} variant="destructive">
@@ -368,5 +368,5 @@ export function TopicLine({
         )}
       </div>
     </div>
-  )
+  );
 }

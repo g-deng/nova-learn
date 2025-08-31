@@ -1,53 +1,53 @@
-import api from "@/lib/api"
-import { useEffect, useState } from "react"
-import { useOutletContext } from "react-router-dom"
+import api from "@/lib/api";
+import { useEffect, useState } from "react";
+import { useOutletContext } from "react-router-dom";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger
-} from "@/components/ui/popover"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Check, Filter } from "lucide-react"
+} from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Check, Filter } from "lucide-react";
 import {
   Command,
   CommandEmpty,
   CommandGroup,
   CommandInput,
   CommandItem
-} from "@/components/ui/command"
-import { cn } from "@/lib/utils"
+} from "@/components/ui/command";
+import { cn } from "@/lib/utils";
 
 export default function TopicFilter({
   topicFilter,
   setTopicFilter
 }: {
-  topicFilter: string[]
-  setTopicFilter: (topics: string[]) => void
+  topicFilter: string[];
+  setTopicFilter: (topics: string[]) => void;
 }) {
-  const [open, setOpen] = useState(false)
-  const [topics, setTopics] = useState<string[]>([])
-  const stackId = useOutletContext<string>()
+  const [open, setOpen] = useState(false);
+  const [topics, setTopics] = useState<string[]>([]);
+  const stackId = useOutletContext<string>();
 
   useEffect(() => {
     const getTopics = async () => {
       try {
-        const response = await api.get(`/stacks/${stackId}/topics`)
-        setTopics(response.data.map((t: { name: string }) => t.name))
+        const response = await api.get(`/stacks/${stackId}/topics`);
+        setTopics(response.data.map((t: { name: string }) => t.name));
       } catch (error) {
-        console.error("Error fetching topics:", error)
+        console.error("Error fetching topics:", error);
       }
-    }
-    getTopics()
-  }, [stackId])
+    };
+    getTopics();
+  }, [stackId]);
 
   const toggleTopic = (topic: string) => {
     setTopicFilter(
       topicFilter.includes(topic)
         ? topicFilter.filter((t) => t !== topic)
         : [...topicFilter, topic]
-    )
-  }
+    );
+  };
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -103,5 +103,5 @@ export default function TopicFilter({
         )}
       </PopoverContent>
     </Popover>
-  )
+  );
 }

@@ -1,28 +1,28 @@
-import { Outlet, useParams, useNavigate } from "react-router-dom"
-import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import api from "@/lib/api"
+import { Outlet, useParams, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import api from "@/lib/api";
 
 export default function StackLayout() {
-  const { stackId } = useParams<{ stackId: string }>()
-  const [stack, setStack] = useState<any>(null)
-  const navigate = useNavigate()
+  const { stackId } = useParams<{ stackId: string }>();
+  const [stack, setStack] = useState<any>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchStackData = async () => {
       try {
-        const stackResult = await api.get(`/stacks/${stackId}`)
+        const stackResult = await api.get(`/stacks/${stackId}`);
         // console.log("stack:", stackResult.data);
-        setStack(stackResult.data)
+        setStack(stackResult.data);
       } catch (error) {
-        console.error("Failed to fetch stack info:", error)
+        console.error("Failed to fetch stack info:", error);
       }
-    }
-    fetchStackData()
-  }, [navigate, stackId])
+    };
+    fetchStackData();
+  }, [navigate, stackId]);
 
   if (!stackId) {
-    return <div className="text-red-500">Invalid stack parameters</div>
+    return <div className="text-red-500">Invalid stack parameters</div>;
   }
 
   return (
@@ -54,5 +54,5 @@ export default function StackLayout() {
         <Outlet context={stackId} />
       </div>
     </div>
-  )
+  );
 }

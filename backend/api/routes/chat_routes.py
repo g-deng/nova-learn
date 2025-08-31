@@ -13,46 +13,46 @@ from db.schemas import (
 from fastapi import Depends
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
+from api import llm
+
+router = APIRouter(prefix="/chats")
 
 
-router = APIRouter(prefix="/chat")
-
-
-@router.post("/stacks/{stack_id}/sessions", response_model=ChatSessionSchema)
+@router.post("/stacks/{stack_id}/create", response_model=ChatSessionSchema)
 def create_chat_session(
     stack_id: uuid.UUID,
     title: str = "New Chat",
     db: Session = Depends(get_db),
-    user_id: uuid.UUID = Depends(get_current_user),
+    user = Depends(get_current_user),
 ):
-    return crud.create_chat_session(db, stack_id=stack_id, user_id=user_id, title=title)
+    return crud.create_chat_session(db, stack_id=stack_id, user_id=user.id, title=title)
 
 
 @router.get("/stacks/{stack_id}/sessions", response_model=List[ChatSessionSchema])
 def list_chat_sessions(
     stack_id: uuid.UUID,
     db: Session = Depends(get_db),
-    user_id: uuid.UUID = Depends(get_current_user),
+    user = Depends(get_current_user),
 ):
-    return crud.list_chat_sessions(db, stack_id=stack_id, user_id=user_id)
+    return crud.list_chat_sessions(db, stack_id=stack_id, user_id=user.id)
 
 
 @router.get("/sessions/{chat_id}", response_model=ChatSessionSchema)
 def get_chat_session(
     chat_id: uuid.UUID,
     db: Session = Depends(get_db),
-    user_id: uuid.UUID = Depends(get_current_user),
+    user = Depends(get_current_user),
 ):
-    return crud.get_chat_by_id(db, chat_id=chat_id, user_id=user_id)
+    return crud.get_chat_by_id(db, chat_id=chat_id, user_id=user.id)
 
 
-@router.post("/sessions/{chat_id}")
+@router.post("/sessions/{chat_id}/delete")
 def delete_chat_session(
     chat_id: uuid.UUID,
     db: Session = Depends(get_db),
-    user_id: uuid.UUID = Depends(get_current_user),
+    user = Depends(get_current_user),
 ):
-    crud.delete_chat_session(db, chat_id=chat_id, user_id=user_id)
+    crud.delete_chat_session(db, chat_id=chat_id, user_id=user.id)
     return {"detail": "Chat deleted"}
 
 
@@ -66,10 +66,10 @@ def add_message(
     chat_id: uuid.UUID,
     body: MessageCreate,
     db: Session = Depends(get_db),
-    user_id: uuid.UUID = Depends(get_current_user),
+    user = Depends(get_current_user),
 ):
     return crud.add_message_to_chat(
-        db, chat_id=chat_id, user_id=user_id, role=body.role, content=body.content
+        db, chat_id=chat_id, user_id=user.id, role=body.role, content=body.content
     )
 
 
@@ -83,10 +83,10 @@ def add_attachment(
     chat_id: uuid.UUID,
     body: AttachmentCreate,
     db: Session = Depends(get_db),
-    user_id: uuid.UUID = Depends(get_current_user),
+    user = Depends(get_current_user),
 ):
     return crud.add_attachment_to_chat(
-        db, chat_id=chat_id, user_id=user_id, type=body.type, ref_id=body.ref_id
+        db, chat_id=chat_id, user_id=user.id, type=body.type, ref_id=body.ref_id
     )
 
 
@@ -99,6 +99,30 @@ def add_tag(
     chat_id: uuid.UUID,
     body: TagCreate,
     db: Session = Depends(get_db),
-    user_id: uuid.UUID = Depends(get_current_user),
+    user = Depends(get_current_user),
 ):
-    return crud.add_tag_to_chat(db, chat_id=chat_id, user_id=user_id, tag=body.tag)
+    return crud.add_tag_to_chat(db, chat_id=chat_id, user_id=user.id, tag=body.tag)
+
+class ChatResponse(BaseModel):
+    message: ChatMessageSchema
+    title: str
+
+@router.post("/sessions/{chat_id}/llm", response_model=ChatResponse)
+async def generate_response(
+    chat_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    user = Depends(get_current_user),
+):
+    chat = crud.get_chat_by_id(db, chat_id, user.id)
+    
+    messages = [{"role": m.role, "content": m.content} for m in chat.messages]
+    if len(messages) <= 1:
+        chat.title = await llm.generate_chat_title(messages)
+        db.commit()
+
+    attachments = crud.hydrate_attachments(db, chat_id, user.id)
+    response_text = await llm.chat_with_context(messages, attachments)
+    assistant_msg = crud.add_message_to_chat(
+        db, chat_id, user.id, role="assistant", content=response_text
+    )
+    return ChatResponse(message=ChatMessageSchema.model_validate(assistant_msg), title=chat.title)
