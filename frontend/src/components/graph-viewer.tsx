@@ -11,8 +11,8 @@ export type Node = {
 };
 
 export type Link = {
-  source: Node;
-  target: Node;
+  source: string;
+  target: string;
 };
 
 export type Props = {
@@ -78,6 +78,45 @@ export default function GraphViewer({ nodes, links, onNodeClick, onLinkClick }: 
             ctx.beginPath();
             ctx.arc(node.x!, node.y!, 8, 0, 2 * Math.PI, false);
             ctx.fill();
+          }}
+          linkCanvasObject={(link, ctx, globalScale) => {
+            const start = link.source as Node;
+            const end = link.target as Node;
+            if (!start.x || !start.y || !end.x || !end.y) return;
+
+            // Draw line
+            ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+            ctx.lineWidth = 1 / globalScale;
+            ctx.beginPath();
+            ctx.moveTo(start.x, start.y);
+            ctx.lineTo(end.x, end.y);
+            ctx.stroke();
+
+            // Draw arrowhead
+            ctx.fillStyle = 'rgba(0,0,0,0.2)';
+            const arrowLength = 12 / globalScale;
+            const arrowWidth = 8 / globalScale;
+            const dx = end.x - start.x;
+            const dy = end.y - start.y;
+            const angle = Math.atan2(dy, dx);
+
+            // Position arrow tip slightly before node center
+            const nodeRadius = 10 / globalScale;
+            const tipX = end.x - Math.cos(angle) * nodeRadius;
+            const tipY = end.y - Math.sin(angle) * nodeRadius;
+
+            ctx.save();
+            ctx.translate(tipX, tipY);
+            ctx.rotate(angle);
+
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(-arrowLength, arrowWidth / 2);
+            ctx.lineTo(-arrowLength, -arrowWidth / 2);
+            ctx.closePath();
+            ctx.fillStyle = 'rgba(0,0,0,0.6)';
+            ctx.fill();
+            ctx.restore();
           }}
           onNodeClick={onNodeClick}
           onLinkClick={onLinkClick}

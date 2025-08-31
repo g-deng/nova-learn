@@ -1,4 +1,4 @@
-from api.sm2 import update_flashcard_stats_from_reviews
+from api.flashcard_algos import update_flashcard_stats_from_reviews, update_ewma_miss
 import uuid
 from typing import List
 from fastapi import APIRouter
@@ -52,6 +52,7 @@ async def add_flashcard_review(flashcard_id: uuid.UUID, body: AddReviewRequest, 
     if not flashcard:
         raise HTTPException(status_code=404, detail="Flashcard not found or does not belong to user")
     review = crud.create_flashcard_review(db, flashcard_id, body.grade, body.latency_ms or 0, user.id)
+    update_ewma_miss(db, flashcard_id, is_miss=(body.grade < 4))
     update_flashcard_stats_from_reviews(db, flashcard_id)
     return {"review": review}
 
@@ -66,6 +67,17 @@ async def get_flashcards_due(stack_id: uuid.UUID, user = Depends(get_current_use
             due_cards.append(card)
     print(len(due_cards), " cards due")
     return due_cards
+
+@router.get("/{stack_id}/missed", response_model=List[FlashcardSchema])
+async def get_missed_flashcards(stack_id: uuid.UUID, user = Depends(get_current_user), db: Session = Depends(get_db)):
+    flashcards = crud.get_flashcards_by_stack_id(db, stack_id, user.id)
+    missed_cards = []
+    for card in flashcards:
+        stats = crud.get_flashcard_stats(db, card.id, user.id)
+        print(f"{stats.ewma_miss if stats is not None else ''} for {card.front}")
+        if stats and stats.ewma_miss is not None and stats.ewma_miss > 0.4:
+            missed_cards.append(card)
+    return missed_cards
 
 class CreateFlashcardRequest(BaseModel):
     front: str

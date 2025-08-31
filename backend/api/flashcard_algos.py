@@ -63,3 +63,34 @@ def update_flashcard_stats_from_reviews(db: Session, flashcard_id: uuid.UUID):
     db.commit()
     db.refresh(stats)
     return stats
+
+
+def update_ewma_miss(db: Session, flashcard_id: uuid.UUID, is_miss: bool, alpha: float = 0.2):
+    print("looking at ewma for ", flashcard_id)
+    stats = db.query(FlashcardStats).filter(FlashcardStats.flashcard_id == flashcard_id).first()
+    if not stats:
+        stats = FlashcardStats(flashcard_id=flashcard_id, ewma_miss=1.0 if is_miss else 0.0)
+        db.add(stats)
+        db.commit()
+        db.refresh(stats)
+        print("updated ewma_miss ", stats.ewma_miss)
+        return stats
+    
+    attempts = db.query(FlashcardReview).filter(FlashcardReview.flashcard_id == flashcard_id).count()
+    if stats.correct_count + stats.wrong_count >= attempts:
+        return stats
+    
+    old_ewma = stats.ewma_miss
+    print(stats.wrong_count, stats.correct_count, attempts)
+    if old_ewma is None:
+        print("no old")
+        new_ewma = 1.0 if is_miss else 0.0
+        stats.ewma_miss = new_ewma
+    else:
+        print("existing old", old_ewma)
+        new_ewma = alpha * (1 if is_miss else 0) + (1 - alpha) * old_ewma
+        stats.ewma_miss = new_ewma
+    db.commit()
+    db.refresh(stats)
+    print("updated ewma_miss ", stats.ewma_miss)
+    return stats

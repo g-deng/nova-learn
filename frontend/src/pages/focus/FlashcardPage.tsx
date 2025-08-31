@@ -80,7 +80,7 @@ export default function FlashcardPage() {
     getFlashcards()
   }, [stackId, flashcardGeneration])
 
-  const filteredCards = flashcards ? flashcards.filter((c) => topicFilter.length === 0 || (c.topicId && topicFilter.includes(c.topicId))) : [];
+  const filteredCards = flashcards ? flashcards.filter((c) => topicFilter.length === 0 || (c.topicName && topicFilter.includes(c.topicName))) : [];
 
   return (
     <div className="flex flex-col justify-between h-full w-full p-4">
@@ -188,7 +188,7 @@ function FlashcardGeneratorButton({ topic, setFlashcardGeneration, setOverallGen
 function ModeFooter({ mode, cardCt, filteredCardCt, topicFilter }: { mode: "learn" | "free" | "missed", cardCt: number, filteredCardCt: number, topicFilter: string[] }) {
   let message = ""
   if (mode === "learn") {
-    message = `${cardCt} cards due for review`
+    message = `${cardCt} cards for review`
   } else if (mode === "free") {
     message = `Total ${cardCt} cards`
   } else if (mode === "missed") {
@@ -246,7 +246,11 @@ function LearnViewer({ topicFilter }: { topicFilter: string[] }) {
   }, [stackId])
 
   const handleResponse = async (grade: number) => {
-    const flashcardId = cards[current].id;
+    const idx = carouselApi ? carouselApi.selectedScrollSnap() : current;
+    console.log(idx);
+    if (idx - 1>= cards.length) return;
+    const flashcardId = cards[idx-1].id;
+    console.log("Adding review for flashcard:", cards[idx-1].front);
     try {
       await api.post(`/flashcards/${flashcardId}/add_review`, { grade, latency_ms: 0 });
     } catch (error) {
@@ -254,7 +258,7 @@ function LearnViewer({ topicFilter }: { topicFilter: string[] }) {
     }
   };
 
-  const filteredCards = cards.filter(card => topicFilter.length === 0 || (card.topicId && topicFilter.includes(card.topicId)));
+  const filteredCards = cards.filter(card => topicFilter.length === 0 || (card.topicName && topicFilter.includes(card.topicName)));
 
   return (
     <div className="flex flex-col items-center gap-10">
@@ -262,7 +266,7 @@ function LearnViewer({ topicFilter }: { topicFilter: string[] }) {
       <Carousel className="w-108 mx-auto mb-10" setApi={setCarouselApi}>
         <CarouselContent>
           {cards.map((card) => {
-            if (topicFilter.length > 0 && (!card.topicId || !topicFilter.includes(card.topicId))) return null;
+            if (topicFilter.length > 0 && (!card.topicName || !topicFilter.includes(card.topicName))) return null;
             return (
               <CarouselItem
                 key={card.id}
@@ -328,8 +332,11 @@ function LearnViewer({ topicFilter }: { topicFilter: string[] }) {
         </div>
       </Carousel>
       <div>
-        {filteredCards.length > 0 && <div className="text-center text-sm text-muted-foreground">
+        {filteredCards.length > 0 && current < filteredCards.length && <div className="text-center text-sm text-muted-foreground">
           {current} of {filteredCards.length}
+        </div>}
+        {filteredCards.length > 0 && current > filteredCards.length && <div className="text-center text-sm text-muted-foreground">
+          Nice work~
         </div>}
         <ModeFooter mode="learn" cardCt={cards.length} filteredCardCt={filteredCards.length} topicFilter={topicFilter} />
       </div>
@@ -343,13 +350,20 @@ function MissedViewer({ topicFilter }: { topicFilter: string[] }) {
 
   useEffect(() => {
     const fetchCards = async () => {
+      const topicsResponse = await api.get(`/stacks/${stackId}/topics`);
       const response = await api.get(`/flashcards/${stackId}/missed`);
-      setCards(response.data);
+      setCards(response.data.map((card: any) => {
+        return {
+          ...card,
+          topicName: topicsResponse.data.find((topic: any) => topic.id === card.topic_id)?.name || "Unknown Topic"
+        };
+      }));
+      console.log(response.data);
     };
     fetchCards();
   }, [stackId]);
 
-  const filteredCards = cards.filter(card => topicFilter.length === 0 || (card.topicId && topicFilter.includes(card.topicId)));
+  const filteredCards = cards.filter(card => topicFilter.length === 0 || (card.topicName && topicFilter.includes(card.topicName)));
 
   return (
     <div>

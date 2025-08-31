@@ -87,6 +87,7 @@ class FlashcardStats(Base):
     ease: Mapped[float] = mapped_column(nullable=False, default=2.5)
     interval_days: Mapped[int] = mapped_column(nullable=False, default=1)
     due_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    ewma_miss: Mapped[float] = mapped_column(nullable=True, default=None)
 
     flashcard: Mapped["Flashcard"] = relationship(back_populates="flashcard_stats")
 
