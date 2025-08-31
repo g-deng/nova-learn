@@ -100,3 +100,26 @@ async def get_flashcards_by_stack(stack_id: uuid.UUID, user = Depends(get_curren
     except ValueError as e:
         print(e)
         raise HTTPException(status_code=404, detail="Stack not found")
+
+class EditFlashcardRequest(BaseModel):
+    front: str
+    back: str
+    explanation: str | None = None
+
+@router.post("/{flashcard_id}/edit", response_model=FlashcardSchema)
+async def edit_flashcard(flashcard_id: uuid.UUID, body: EditFlashcardRequest, user = Depends(get_current_user), db: Session = Depends(get_db)):
+    flashcard = crud.get_flashcard_by_id(db, flashcard_id, user.id)
+    if not flashcard:
+        raise HTTPException(status_code=404, detail="Flashcard not found or does not belong to user")
+    updated = crud.edit_flashcard(db, flashcard_id, body.front, body.back, user.id)
+    if body.explanation is not None:
+        updated = crud.add_flashcard_explanation(db, flashcard_id, body.explanation, user.id)
+    return updated
+
+@router.post("/{flashcard_id}/delete")
+async def delete_flashcard(flashcard_id: uuid.UUID, user = Depends(get_current_user), db: Session = Depends(get_db)):
+    flashcard = crud.get_flashcard_by_id(db, flashcard_id, user.id)
+    if not flashcard:
+        raise HTTPException(status_code=404, detail="Flashcard not found or does not belong to user")
+    crud.delete_flashcard(db, flashcard_id, user.id)
+    return {"detail": "Flashcard deleted successfully"}

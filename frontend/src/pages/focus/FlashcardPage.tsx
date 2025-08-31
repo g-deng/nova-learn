@@ -5,7 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { ChevronLeft, ChevronRight, Check, X, Loader2, Sparkles } from "lucide-react"
+import { ChevronLeft, ChevronRight, Check, X, Loader2, Sparkles, Pencil, Shuffle, Dot } from "lucide-react"
 import { motion } from "framer-motion"
 import {
   Carousel,
@@ -21,14 +21,20 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
+  DialogFooter,
 } from "@/components/ui/dialog"
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
+import { Toggle } from "@/components/ui/toggle"
 import api from "@/lib/api"
 import TopicFilter from "@/components/topic-filter"
+import { Textarea } from "@/components/ui/textarea"
 
 type Flashcard = {
   id: string
@@ -46,6 +52,8 @@ export default function FlashcardPage() {
   const [mode, setMode] = useState<"learn" | "free" | "missed">("free")
   const [topicCounts, setTopicCounts] = useState<TopicCount[]>([])
   const [flashcardGeneration, setFlashcardGeneration] = useState<number>(0);
+  const [shuffleFree, setShuffleFree] = useState(false);
+  const [filteredCardsFree, setFilteredCardsFree] = useState<Flashcard[]>([])
 
   useEffect(() => {
     const getFlashcards = async () => {
@@ -78,9 +86,14 @@ export default function FlashcardPage() {
       }
     }
     getFlashcards()
-  }, [stackId, flashcardGeneration])
+  }, [stackId, flashcardGeneration]);
 
-  const filteredCards = flashcards ? flashcards.filter((c) => topicFilter.length === 0 || (c.topicName && topicFilter.includes(c.topicName))) : [];
+  useEffect(() => {
+    setFilteredCardsFree(flashcards ? flashcards.filter((c) => topicFilter.length === 0 || (c.topicName && topicFilter.includes(c.topicName))) : []);
+    if (shuffleFree) {
+      setFilteredCardsFree((prev) => [...prev].sort(() => Math.random() - 0.5));
+    }
+  }, [flashcards, shuffleFree]);
 
   return (
     <div className="flex flex-col justify-between h-full w-full p-4">
@@ -93,6 +106,17 @@ export default function FlashcardPage() {
             <TabsTrigger value="missed">Missed</TabsTrigger>
           </TabsList>
           <div className="flex gap-2">
+            {mode === "free" && <Toggle
+              className="relative w-9 h-9 flex flex-col items-center justify-center"
+              variant="outline"
+              pressed={shuffleFree}
+              onPressedChange={setShuffleFree}
+            >
+              <Shuffle className="w-8 h-8" />
+              {shuffleFree && (
+                <Dot className="w-2 h-2 absolute top-3/7 mt-1 left-1/2 -translate-x-1/2" />
+              )}
+            </Toggle>}
             <FlashcardGenerator topicCounts={topicCounts} setFlashcardGeneration={setFlashcardGeneration} />
             <TopicFilter topicFilter={topicFilter} setTopicFilter={setTopicFilter} />
           </div>
@@ -101,9 +125,9 @@ export default function FlashcardPage() {
         <TabsContent value="learn" className="flex flex-col justify-center">
           <LearnViewer topicFilter={topicFilter} />
         </TabsContent>
-        <TabsContent value="free" className="flex flex-col justify-center gap-2">
-          <CardViewer cards={filteredCards} />
-          <ModeFooter mode={mode} cardCt={flashcards.length} filteredCardCt={filteredCards.length} topicFilter={topicFilter} />
+        <TabsContent value="free" className="flex flex-col justify-center items-center gap-2">
+          <CardViewer cards={filteredCardsFree} />
+          <ModeFooter mode={mode} cardCt={flashcards.length} filteredCardCt={filteredCardsFree.length} topicFilter={topicFilter} />
         </TabsContent>
         <TabsContent value="missed" className="flex flex-col justify-center">
           <MissedViewer topicFilter={topicFilter} />
@@ -248,9 +272,9 @@ function LearnViewer({ topicFilter }: { topicFilter: string[] }) {
   const handleResponse = async (grade: number) => {
     const idx = carouselApi ? carouselApi.selectedScrollSnap() : current;
     console.log(idx);
-    if (idx - 1>= cards.length) return;
-    const flashcardId = cards[idx-1].id;
-    console.log("Adding review for flashcard:", cards[idx-1].front);
+    if (idx - 1 >= cards.length) return;
+    const flashcardId = cards[idx - 1].id;
+    console.log("Adding review for flashcard:", cards[idx - 1].front);
     try {
       await api.post(`/flashcards/${flashcardId}/add_review`, { grade, latency_ms: 0 });
     } catch (error) {
@@ -376,35 +400,118 @@ function MissedViewer({ topicFilter }: { topicFilter: string[] }) {
 
 function CardViewer({ cards }: { cards: Flashcard[] }) {
   const [flipped, setFlipped] = useState(false)
+  const [open, setOpen] = useState("")
+  const [front, setFront] = useState("")
+  const [back, setBack] = useState("")
+  const [explanation, setExplanation] = useState("")
+  const [selectedCard, setSelectedCard] = useState<Flashcard | null>(null)
+
+  const handleSubmit = async () => {
+    if (!selectedCard) return
+    try {
+      await api.post(`/flashcards/${selectedCard.id}/edit`, { front, back, explanation })
+      setOpen("")
+    } catch (err) {
+      console.error("Edit failed:", err)
+    }
+  }
+
+  const handleDelete = async () => {
+    if (!selectedCard) return
+    try {
+      await api.post(`/flashcards/${selectedCard.id}/delete`, { front, back, explanation })
+      setOpen("")
+    } catch (err) {
+      console.error("Delete failed:", err)
+    }
+  }
+
   if (!cards) return <Skeleton className="w-108 h-72 rounded-2xl" />
   if (cards.length === 0) return <div className="text-center">No flashcards found. </div>
+
   return (
     <Carousel className="w-108 mx-auto">
       <CarouselContent>
-        {cards.map((card) => {
-          return (
-            <CarouselItem
-              key={card.id}
-              className="flex justify-center cursor-pointer"
-              onClick={() => setFlipped((prev) => !prev)}
+        {cards.map((card) => (
+          <CarouselItem
+            key={card.id}
+            className="flex justify-center cursor-pointer"
+            onClick={() => setFlipped((prev) => !prev)}
+          >
+            <motion.div
+              className="w-108 h-72"
+              initial={false}
+              animate={{ rotateX: flipped ? 360 : 0 }}
+              transition={{ duration: 0.3 }}
+              style={{ perspective: 1000 }}
             >
-              <motion.div
-                className="w-108 h-72"
-                initial={false}
-                animate={{ rotateX: flipped ? 360 : 0 }}
-                transition={{ duration: 0.3 }}
-                style={{ perspective: 1000 }}
-              >
-                <Card className="w-full h-full flex items-center justify-center text-center text-lg font-medium rounded-2xl bg-white">
-                  {!flipped && <CardContent className="flex flex-col items-center justify-center h-full">
+              <Card className="w-full h-full flex items-center justify-center text-center text-lg font-medium rounded-2xl bg-white">
+                {!flipped && (
+                  <CardContent className="flex flex-col items-center justify-center h-full">
                     {card.front}
-                  </CardContent>}
-                  {flipped && <CardContent className="flex flex-col items-center justify-between h-full">
-                    <Badge variant="secondary">{card.topicName || "Unknown Topic"}</Badge>
+                  </CardContent>
+                )}
+                {flipped && (
+                  <CardContent className="flex flex-col items-center justify-between h-full">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary">{card.topicName || "Unknown Topic"}</Badge>
+                      <div onClick={(e) => e.stopPropagation()}>
+                        <Dialog open={open === card.id} onOpenChange={(open) => setOpen(open ? card.id : "")}>
+                          <DialogTrigger asChild>
+                            <Button
+                              size="icon"
+                              variant="outline"
+                              className="w-8 h-8 rounded-full"
+                              onClick={() => {
+                                setSelectedCard(card)
+                                setFront(card.front)
+                                setBack(card.back)
+                                setExplanation(card.explanation || "")
+                              }}
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Edit Flashcard</DialogTitle>
+                              <DialogDescription>Make edits to the flashcard content. Flashcard history will be preserved.</DialogDescription>
+                            </DialogHeader>
+                            <div className="space-y-4">
+                              <div>
+                                <Label className="pb-1">Front</Label>
+                                <Input value={front} onChange={(e) => setFront(e.target.value)} />
+                              </div>
+                              <div>
+                                <Label className="pb-1">Back</Label>
+                                <Input value={back} onChange={(e) => setBack(e.target.value)} />
+                              </div>
+                              <div>
+                                <Label className="pb-1">Explanation</Label>
+                                <Textarea
+                                  value={explanation}
+                                  onChange={(e) => setExplanation(e.target.value)}
+                                />
+                              </div>
+                            </div>
+                            <DialogFooter>
+                              <div className="flex w-full justify-between">
+                                <Button variant="destructive" onClick={handleDelete}>Delete Card</Button>
+                                <Button onClick={handleSubmit}>Submit</Button>
+                              </div>
+                            </DialogFooter>
+                          </DialogContent>
+                        </Dialog>
+                      </div>
+                    </div>
                     {card.back}
                     <Popover>
                       <PopoverTrigger asChild>
-                        <Button variant="outline" className="rounded-full" onClick={(e) => e.stopPropagation()}>
+                        <Button
+                          variant="outline"
+                          className="w-8 h-8 rounded-full"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <Sparkles className="w-4 h-4" />
                         </Button>
                       </PopoverTrigger>
@@ -412,12 +519,12 @@ function CardViewer({ cards }: { cards: Flashcard[] }) {
                         <p className="text-sm">{card.explanation || "No explanation provided."}</p>
                       </PopoverContent>
                     </Popover>
-                  </CardContent>}
-                </Card>
-              </motion.div>
-            </CarouselItem>
-          )
-        })}
+                  </CardContent>
+                )}
+              </Card>
+            </motion.div>
+          </CarouselItem>
+        ))}
       </CarouselContent>
 
       <div onClick={() => setFlipped(false)}>
@@ -431,6 +538,5 @@ function CardViewer({ cards }: { cards: Flashcard[] }) {
         </CarouselNext>
       </div>
     </Carousel>
-
   )
 }
