@@ -1,4 +1,3 @@
-import { Button } from "@/components/ui/button";
 import {
   ResizablePanelGroup,
   ResizablePanel,
@@ -7,21 +6,28 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Node, Link } from "@/components/graph-viewer";
 import api from "@/lib/api";
-import { useNavigate, useOutletContext, Outlet } from "react-router-dom";
+import {
+  useNavigate,
+  useOutletContext,
+  Outlet,
+  useLocation
+} from "react-router-dom";
 import { useEffect, useState } from "react";
 import GraphViewer from "@/components/graph-viewer";
-import ChatManager from "@/components/chat-manager";
+import ChatManager, { handleDiscuss } from "@/components/chat-manager";
+import { Badge } from "@/components/ui/badge";
+import { BookOpen } from "lucide-react";
+import StackEditor from "./components/stack-editor";
 
-type Pane = "graph" | "chat" | "chat0" | "chat1" | "list" | "manage";
+export type Pane = "graph" | "chat" | "chat0" | "chat1" | "list" | "manage";
 
 export default function FocusLayout() {
   const [topics, setTopics] = useState<Node[]>([]);
   const [dependencies, setDependencies] = useState<Link[]>([]);
-  const [layout, setLayout] = useState<Pane>("graph");
+  const [layout, setLayout] = useState<Pane>("manage");
   const stackId = useOutletContext<string>();
+  const location = useLocation();
   const navigate = useNavigate();
-
-  console.log(layout);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -49,10 +55,20 @@ export default function FocusLayout() {
     fetchData();
   }, [stackId]);
 
+  const currentTab = location.pathname.includes("/exams")
+    ? "exams"
+    : "flashcards";
+
   return (
-    <ResizablePanelGroup direction="horizontal" className="w-full h-full pt-4">
-      <ResizablePanel>
-        <div className="min-h-0 h-full w-full overflow-hidden">
+    <ResizablePanelGroup direction="horizontal" className="w-full h-full pt-4 min-h-0">
+      <ResizablePanel className="flex flex-col h-full w-full min-h-0 overflow-hidden">
+        <Tabs value={currentTab} onValueChange={(v) => navigate(v)}>
+          <TabsList>
+            <TabsTrigger value="exams">Exams</TabsTrigger>
+            <TabsTrigger value="flashcards">Flashcards</TabsTrigger>
+          </TabsList>
+        </Tabs>
+        <div className="min-h-0 h-full w-full">
           <Outlet context={{ stackId, setLayout }} />
         </div>
       </ResizablePanel>
@@ -64,35 +80,39 @@ export default function FocusLayout() {
           className="w-full h-full"
         >
           <TabsList>
+            <TabsTrigger value="chat">Chat</TabsTrigger>
             <TabsTrigger value="graph">Graph View</TabsTrigger>
             <TabsTrigger value="list">List View</TabsTrigger>
-            <TabsTrigger value="chat">Chat</TabsTrigger>
+            <TabsTrigger value="manage">Manage</TabsTrigger>
           </TabsList>
+          <TabsContent value="manage" className="w-full h-full min-h-0">
+            <StackEditor />
+          </TabsContent>
           <TabsContent value="graph">
             <GraphViewer
               nodes={topics}
               links={dependencies}
-              onNodeClick={(node) => {
-                navigate("#" + node.id);
-              }}
+              onNodeClick={(node) => handleDiscuss(stackId, "topic", node.id, setLayout)}
               onLinkClick={() => {}}
             />
           </TabsContent>
           <TabsContent value="list">
             <div>
               <h2 className="text-lg font-semibold pb-4">Topics</h2>
-              <ul className="list-disc pl-5">
+              <div className="flex flex-col gap-2">
                 {topics.map((topic) => (
-                  <li key={topic.id} className="mb-0">
-                    <Button
-                      variant="link"
-                      onClick={() => navigate("#" + topic.id)}
-                    >
-                      {topic.name}
-                    </Button>
-                  </li>
+                  <Badge
+                    key={topic.id}
+                    variant="outline"
+                    className="text-[13px] cursor-pointer"
+                    onClick={() =>
+                      handleDiscuss(stackId, "topic", topic.id, setLayout)
+                    }
+                  >
+                    <BookOpen className="w-4 h-4" /> {topic.name}
+                  </Badge>
                 ))}
-              </ul>
+              </div>
             </div>
           </TabsContent>
           <TabsContent value="chat" className="w-full h-full min-h-0">

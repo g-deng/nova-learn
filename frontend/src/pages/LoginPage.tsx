@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { loginWithEmail, loginWithGoogle, registerWithEmail } from "@/lib/auth";
 import { useNavigate } from "react-router-dom";
+import { Loader2 } from "lucide-react";
 
 export function LoginForm({
   className,
@@ -20,31 +21,43 @@ export function LoginForm({
 }: React.ComponentProps<"div">) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleEmailLogin = async () => {
     try {
+      setLoading(true);
       const userCred = await loginWithEmail(email, password);
       const user = userCred.user;
       const token = await user.getIdToken();
       localStorage.setItem("authToken", token);
       console.log("Login success:", user);
-      navigate("/stacks");
+      setTimeout(() => {
+        navigate("/stacks");
+        setLoading(false);
+      }, 1000);
     } catch (err) {
       console.error(err);
+      setLoading(false);
     }
   };
 
   const handleGoogleLogin = async () => {
     try {
+      setLoading(true);
       const userCred = await loginWithGoogle();
       const user = userCred.user;
       const token = await user.getIdToken();
       localStorage.setItem("authToken", token);
       console.log("Login success:", user);
-      navigate("/stacks");
+      setTimeout(() => {
+        navigate("/stacks");
+        setLoading(false);
+      }, 2000);
     } catch (err) {
       console.error(err);
+      
+      setLoading(false);
     }
   };
 
@@ -93,14 +106,14 @@ export function LoginForm({
                   onClick={handleEmailLogin}
                   className="w-full"
                 >
-                  Login
+                  {loading && <Loader2 className="animate-spin mr-2" />} Login
                 </Button>
                 <Button
                   variant="outline"
                   onClick={handleGoogleLogin}
                   className="w-full"
                 >
-                  Login with Google
+                  {loading && <Loader2 className="animate-spin mr-2" />} Login with Google
                 </Button>
               </div>
             </div>

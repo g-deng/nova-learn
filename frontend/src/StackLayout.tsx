@@ -2,6 +2,7 @@ import { Outlet, useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import api from "@/lib/api";
+import { ChevronLeft } from "lucide-react";
 
 export default function StackLayout() {
   const { stackId } = useParams<{ stackId: string }>();
@@ -28,6 +29,9 @@ export default function StackLayout() {
   return (
     <div className="h-full w-full p-4 flex flex-col">
       <header className="flex-none pb-2 flex flex-row gap-4 items-center justify-between border-b">
+        <Button variant="outline" onClick={() => navigate("/stacks")}>
+          <ChevronLeft className="w-4 h-4" />
+        </Button>
         <h1
           className="text-xl font-bold cursor-pointer"
           onClick={() => navigate(`/stack/${stackId}/`)}
@@ -35,7 +39,7 @@ export default function StackLayout() {
           {stack?.name}
         </h1>
         <p className="text-gray-500">{stack?.description}</p>
-        <div className="flex gap-2">
+        {/* <div className="flex gap-2">
           <Button
             variant="outline"
             onClick={() => navigate(`/stack/${stackId}/edit-topics`)}
@@ -48,7 +52,7 @@ export default function StackLayout() {
           >
             Edit Dependencies
           </Button>
-        </div>
+        </div> */}
       </header>
       <div className="flex-1 overflow-hidden">
         <Outlet context={stackId} />

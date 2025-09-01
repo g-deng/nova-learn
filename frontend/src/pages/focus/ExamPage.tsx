@@ -16,6 +16,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import api from "@/lib/api";
 import { useNavigate, useOutletContext, useParams } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ChevronLeft, Loader2 } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 type Question = {
   id: string;
@@ -53,17 +55,18 @@ export default function ExamPage() {
   }, [examId]);
 
   return (
-    <div className="w-full h-full min-h-0 p-4 overflow-auto">
-      <div className="flex items-center justify-between pb-4">
-        <h2 className="text-lg font-medium"> {examName}</h2>
+    <div className="w-full h-full flex flex-col min-h-0 p-4 overflow-hidden">
+      <div className="flex-none flex items-center gap-2 pb-4">
         <Button
           variant="outline"
-          onClick={() => navigate(`/stack/${stackId}/exams`)}
+          onClick={() => navigate(`/stack/${stackId}/exams/${examId}`)}
         >
-          Back to Exams
+          <ChevronLeft className="w-4 h-4" />
         </Button>
+        <h2 className="text-lg font-medium"> {examName}</h2>
+        
       </div>
-      <div>
+      <div className="h-full w-full min-h-0">
         {loadingQuestions ? (
           <div className="space-y-4">
             {[1, 2, 3].map((i) => (
@@ -98,6 +101,7 @@ type ExamFormProps = {
 };
 
 function ExamForm({ questions, examId, stackId }: ExamFormProps) {
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const schema = z.object(
     Object.fromEntries(
@@ -112,6 +116,7 @@ function ExamForm({ questions, examId, stackId }: ExamFormProps) {
 
   const onSubmit = async (values: z.infer<typeof schema>) => {
     try {
+      setLoading(true);
       const response = await api.post(`/exams/${examId}/upload_attempt`, {
         question_attempts: questions.map((q) => ({
           question_id: q.id,
@@ -122,18 +127,21 @@ function ExamForm({ questions, examId, stackId }: ExamFormProps) {
       navigate(`/stack/${stackId}/exams/${examId}#${response.data.id}`);
     } catch (error) {
       console.error("Failed to submit attempt:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="h-full w-full min-h-0 mx-auto space-y-6">
+    <div className="h-full w-full flex flex-col min-h-0">
+    <ScrollArea className="min-h-0 mx-auto">
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
           className="space-y-6 min-h-0"
         >
           {questions.map((q, idx) => (
-            <Card key={q.id} className="shadow-md rounded-xl">
+            <Card key={q.id} className="shadow-md rounded-xl py-2">
               <CardContent className="p-6">
                 <FormField
                   control={form.control}
@@ -147,7 +155,7 @@ function ExamForm({ questions, examId, stackId }: ExamFormProps) {
                         <RadioGroup
                           onValueChange={field.onChange}
                           value={field.value}
-                          className="space-y-2 mt-2 relative"
+                          className="space-y-2 relative"
                         >
                           {[
                             ["A", q.option_a],
@@ -182,10 +190,11 @@ function ExamForm({ questions, examId, stackId }: ExamFormProps) {
           ))}
 
           <Button type="submit" className="w-full">
-            Submit Exam
+            {loading && <Loader2 className="mr-2 animate-spin" />} Submit Exam
           </Button>
         </form>
       </Form>
+    </ScrollArea>
     </div>
   );
 }

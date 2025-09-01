@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Command,
   CommandInput,
@@ -29,6 +29,7 @@ import api from "@/lib/api";
 import { useOutletContext } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import type { Pane } from "@/FocusLayout";
 
 type Message = {
   role: "user" | "assistant";
@@ -139,7 +140,7 @@ export default function ChatManager({ layout }: { layout: string }) {
             })
             .sort(
               (a: Chat, b: Chat) =>
-                b.created_at.getTime() - a.created_at.getTime()
+                b.updated_at.getTime() - a.updated_at.getTime()
             )
         );
         if (layout === "chat0" || layout === "chat1") {
@@ -156,8 +157,8 @@ export default function ChatManager({ layout }: { layout: string }) {
     try {
       setCreationLoading(true);
       const response = await api.post(`/chats/stacks/${stackId}/create`);
-      const newChat = response.data;
-      setChats((prev) => [...prev, newChat]);
+      const newChat = { ...response.data, created_at: new Date(response.data.created_at), updated_at: new Date(response.data.updated_at) };
+      setChats((prev) => [newChat, ...prev]);
       setActiveChatId(newChat.id);
     } catch (error) {
       console.error("Error creating chat:", error);
@@ -288,15 +289,20 @@ export default function ChatManager({ layout }: { layout: string }) {
             {chats.map((chat) => (
               <Card
                 key={chat.id}
-                className={` cursor-pointer ${
+                className={`p-0 cursor-pointer ${
                   activeChatId === chat.id ? "border-primary" : ""
                 }`}
                 onClick={() => setActiveChatId(chat.id)}
               >
                 <CardHeader className="flex flex-row items-center justify-between p-2">
+                  <div className="flex flex-col">
                   <CardTitle className="text-sm font-medium wrap">
                     {chat.title}
                   </CardTitle>
+                  <CardDescription className="flex flex-col text-xs">
+                    {chat.updated_at.toLocaleString()}
+                  </CardDescription>
+                  </div>
                   <Button
                     size="icon"
                     variant="ghost"
@@ -413,6 +419,7 @@ export default function ChatManager({ layout }: { layout: string }) {
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Type a message..."
                 onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+                disabled={assistantLoading}
               />
               <Button onClick={sendMessage} disabled={assistantLoading}>
                 Send
@@ -428,6 +435,31 @@ export default function ChatManager({ layout }: { layout: string }) {
     </div>
   );
 }
+
+export const handleDiscuss = async (
+  stackId: string,
+  type: "topic" | "flashcard" | "exam_question",
+  refId: string,
+  setLayout: Dispatch<SetStateAction<Pane>>
+) => {
+  try {
+    setLayout((prev) => (prev === "chat0" ? "chat1" : "chat0"));
+    console.log("layout set");
+    console.log(stackId, type, refId);
+    const chatRes = await api.post(`/chats/stacks/${stackId}/create`, {
+      title: "New Chat"
+    });
+    const chatId = chatRes.data.id;
+
+    await api.post(`/chats/sessions/${chatId}/attachments`, {
+      type,
+      ref_id: refId
+    });
+    setLayout((prev) => (prev === "chat0" ? "chat1" : "chat0"));
+  } catch (err) {
+    console.error("Failed to start discuss flow:", err);
+  }
+};
 
 export function DiscussionButton({
   stackId,

@@ -2,6 +2,7 @@ import uuid
 from typing import List
 from fastapi import APIRouter
 from api.auth import get_current_user
+from db.models import TopicDependency
 from db import crud
 from db.database import get_db
 from db.schemas import (
@@ -23,7 +24,7 @@ async def get_stacks(user=Depends(get_current_user), db: Session = Depends(get_d
     return crud.get_stacks_by_user_id(db, user.id)
 
 
-@router.post("/{stack_id}/generate_topics", response_model=dict[str, str])
+@router.post("/{stack_id}/generate_topics", response_model=List[TopicSchema])
 async def generate_topics(
     stack_id: uuid.UUID, user=Depends(get_current_user), db: Session = Depends(get_db)
 ):
@@ -37,12 +38,13 @@ async def generate_topics(
     avoid_topics = [t.name for t in existing_topics]
 
     topics = await extract_topics(stack_info.name, stack_info.description, avoid_topics)
-    print("Topics")
-    print(topics)
     if "topics" in topics:
-        return topics["topics"]
+        for t in topics["topics"]:
+            crud.create_topic(db, stack_id, t, topics["topics"][t], user.id)
+        return crud.get_topics_with_prerequisites_by_stack_id(db, stack_id, user.id)
     else:
-        raise HTTPException(status_code=500, detail="Failed to extract topics")
+        print(topics)
+        raise HTTPException(status_code=500, detail="Failed to generate topics")
 
 
 class SubmitTopicListRequest(BaseModel):
@@ -73,7 +75,7 @@ async def submit_topic_list(
     return out
 
 
-@router.post("/{stack_id}/infer_dependencies", response_model=List[List[str]])
+@router.post("/{stack_id}/infer_dependencies", response_model=List[TopicSchema])
 async def infer_dependencies(
     stack_id: uuid.UUID, user=Depends(get_current_user), db: Session = Depends(get_db)
 ):
@@ -84,13 +86,10 @@ async def infer_dependencies(
         )
     print([t.name for t in topics])
     dependencies = await infer_topic_dependencies([t.name for t in topics])
+    for dep in dependencies:
+        crud.add_topic_dependency_by_name(db, dep[0], dep[1], user.id)
 
-    if dependencies:
-        return dependencies
-    else:
-        raise HTTPException(
-            status_code=500, detail="Failed to infer topic dependencies"
-        )
+    return crud.get_topics_with_prerequisites_by_stack_id(db, stack_id, user.id)
 
 
 class SubmitDependenciesRequest(BaseModel):
@@ -189,10 +188,57 @@ async def get_topics(
     stack_id: uuid.UUID, user=Depends(get_current_user), db: Session = Depends(get_db)
 ):
     print("Fetching topics")
-    topics = crud.get_topics_by_stack_id(db, stack_id, user.id)
-    if crud.get_stack_by_id(db, stack_id, user.id):
+    try:
+        topics = crud.get_topics_by_stack_id(db, stack_id, user.id)
+        if crud.get_stack_by_id(db, stack_id, user.id):
+            return topics
+    except Exception as e:
+        print(f"Error fetching topics: {e}")
+    raise HTTPException(status_code=404, detail="Stack not found")
+
+@router.get("/{stack_id}/topics_with_prereqs", response_model=List[TopicSchema])
+async def get_topics_with_prereqs(
+    stack_id: uuid.UUID, user=Depends(get_current_user), db: Session = Depends(get_db)
+):
+    print("Fetching topics with prerequisites")
+    topics = crud.get_topics_with_prerequisites_by_stack_id(db, stack_id, user.id)
+    if topics:
         return topics
     raise HTTPException(status_code=404, detail="Stack not found")
+
+
+class SubmitNewGraphRequest(BaseModel):
+    topics: List[TopicSchema]
+
+@router.post("/{stack_id}/submit_topics_with_prereqs", response_model=List[TopicSchema])
+async def submit_topics_with_prereqs(
+    stack_id: uuid.UUID,
+    body: SubmitNewGraphRequest,
+    user=Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    print("Submitting topics with prerequisites")
+    for topic in body.topics:
+        if topic.id:
+            crud.update_topic(db, topic.id, topic.name, topic.description, stack_id, user.id)
+        else:
+            try:
+                crud.create_topic(db, stack_id, topic.name, topic.description, user.id)
+            except Exception as e:
+                print(f"Error creating topic: {e}")
+
+        db.query(TopicDependency).filter(TopicDependency.to_topic_id == topic.id).delete()
+        for prereq in topic.prerequisites:
+            try:
+                crud.add_topic_dependency(db, prereq.from_topic_id, prereq.to_topic_id, user.id)
+            except Exception as e:
+                print(f"Error creating topic dependency: {e}")
+
+    for db_topic in crud.get_topics_by_stack_id(db, stack_id, user.id):
+        if db_topic.id not in [t.id for t in body.topics]:
+            crud.delete_topic(db, db_topic.id, user.id)
+
+    return crud.get_topics_by_stack_id(db, stack_id, user.id)
 
 
 @router.get("/{stack_id}/dependencies", response_model=List[TopicDependencySchema])

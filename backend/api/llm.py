@@ -4,7 +4,7 @@ import json
 from typing import List
 
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
-model = "z-ai/glm-4.5-air:free"  # "google/gemini-2.0-flash-exp:free" #  # "openai/gpt-3.5-turbo" "openai/gpt-oss-20b:free"
+model = "openai/gpt-4o-mini"# "anthropic/claude-3-haiku" # "z-ai/glm-4.5-air:free"  # "google/gemini-2.0-flash-exp:free" #  # "openai/gpt-3.5-turbo" "openai/gpt-oss-20b:free"
 temperature = 0.2
 
 
@@ -14,7 +14,7 @@ async def extract_topics(
     prompt = (
         f"Subject: {subject}\n"
         f"Description: {description}\n\n"
-        "Extract a list of high-level topics relevant to this subject. "
+        "Extract a list of 8-18 high-level topics relevant to this subject. "
         "For each topic, return a short 1-2 sentence description explaining it. "
         "Format your output as a JSON object where keys are the topic names."
         "and values are the short descriptions. Do not include extra explanation outside the JSON object."
@@ -66,7 +66,7 @@ async def infer_topic_dependencies(topics: List[str]) -> List[List[str]]:
         "Infer prerequisite relationships between them. Return a list of directed edges in the format:\n"
         '[["Topic A", "Topic B"], ...]\n\n'
         'Where an edge ["A", "B"] means that "A should be understood before B".\n'
-        "Only include edges you are confident in. Do not invent new topics. Do not explain anything."
+        "Only include edges you are confident in. Do not invent new topics. Do not explain anything. Do not create circular dependencies."
     )
 
     headers = {
@@ -90,6 +90,12 @@ async def infer_topic_dependencies(topics: List[str]) -> List[List[str]]:
 
     try:
         content = response.json()["choices"][0]["message"]["content"]
+        if not content.startswith("[") or not content.endswith("]"):
+            start = content.find("[")
+            end = content.rfind("]")
+            if start == -1 or end == -1:
+                raise ValueError("Invalid JSON format")
+            content = content[start : end + 1]
         edges = json.loads(content.replace("'", '"'))
         if isinstance(edges, list) and all(
             isinstance(pair, list) and len(pair) == 2 for pair in edges

@@ -97,10 +97,10 @@ export default function ExamInfoPage() {
           topics: response.data.topics,
           bestAttempt: response.data.best_attempt
             ? {
-                id: response.data.best_attempt.id,
-                score: response.data.best_attempt.score,
-                scoredQuestions: response.data.best_attempt.scored_questions
-              }
+              id: response.data.best_attempt.id,
+              score: response.data.best_attempt.score,
+              scoredQuestions: response.data.best_attempt.scored_questions
+            }
             : null
         });
         const responseAttempts = await api.get(`/exams/${examId}/attempts`);
@@ -369,15 +369,17 @@ function QuestionCard({
             {index + 1}. {question.text}
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-sm">Reveal</span>
-            <Switch checked={reveal} onCheckedChange={setReveal} />
+            <div className="flex items-center gap-2">
+              <span className="text-sm">Reveal</span>
+              <Switch checked={reveal} onCheckedChange={setReveal} />
+            </div>
+            <DiscussionButton
+              stackId={stackId}
+              type="exam_question"
+              refId={question.id}
+              setLayout={setLayout}
+            />
           </div>
-          <DiscussionButton
-            stackId={stackId}
-            type="exam_question"
-            refId={question.id}
-            setLayout={setLayout}
-          />
         </div>
         <div className="space-y-1">
           {[
@@ -388,11 +390,10 @@ function QuestionCard({
           ].map(([val, label]) => (
             <div
               key={val}
-              className={`p-2 rounded ${
-                reveal && val === question.answer
+              className={`p-2 rounded ${reveal && val === question.answer
                   ? "bg-green-200 dark:bg-green-800"
                   : "bg-muted"
-              }`}
+                }`}
             >
               {val}. {label}
             </div>
@@ -508,26 +509,28 @@ function ReviewQuestionCard({
               </p>
             )}
           </div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-1">
-              <span className="text-sm">Reveal</span>
-              <Switch checked={reveal} onCheckedChange={setReveal} />
+          <div className="flex w-full items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-1">
+                <span className="text-sm">Reveal</span>
+                <Switch checked={reveal} onCheckedChange={setReveal} />
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="text-sm">Give Credit</span>
+                <Switch checked={giveCredit} onCheckedChange={setGiveCredit} />
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="text-sm">Unscored</span>
+                <Switch checked={unscored} onCheckedChange={setUnscored} />
+              </div>
             </div>
-            <div className="flex items-center gap-1">
-              <span className="text-sm">Give Credit</span>
-              <Switch checked={giveCredit} onCheckedChange={setGiveCredit} />
-            </div>
-            <div className="flex items-center gap-1">
-              <span className="text-sm">Unscored</span>
-              <Switch checked={unscored} onCheckedChange={setUnscored} />
-            </div>
+            <DiscussionButton
+              stackId={stackId}
+              type="exam_question"
+              refId={question.id}
+              setLayout={setLayout}
+            />
           </div>
-          <DiscussionButton
-            stackId={stackId}
-            type="exam_question"
-            refId={question.id}
-            setLayout={setLayout}
-          />
         </div>
 
         <div className="space-y-1">

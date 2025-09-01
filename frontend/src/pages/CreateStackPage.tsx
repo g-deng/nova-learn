@@ -36,27 +36,16 @@ export default function CreateStackPage() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     console.log(values);
-    const token = localStorage.getItem("authToken");
-    if (!token) {
-      navigate("/login");
-      return;
-    }
-    console.log(token);
     try {
       const res = await api.post(
         "/stacks/add_stack",
         {
           name: values.title,
-          description: values.description + "\n\n User's Goals: " + values.notes
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
+          description: values.description
         }
       );
       console.log("Stack created successfully");
-      navigate(`/stack/${res.data.id}/edit-topics`, {
+      navigate(`/stack/${res.data.id}`, {
         state: { description: values.description }
       });
     } catch (error) {
@@ -151,10 +140,13 @@ export default function CreateStackPage() {
                 </FormItem>
               )}
             />
-
-            <Button type="submit">Submit</Button>
+            <div className="flex flex-col gap-2">
+              <Button type="submit">Submit</Button>
+              <Button variant="outline" onClick={(e) => { e.stopPropagation(); navigate("/stacks"); }}>Cancel</Button>
+            </div>
           </form>
         </Form>
+        
       </Card>
     </div>
   );

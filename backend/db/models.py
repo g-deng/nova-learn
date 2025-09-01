@@ -1,9 +1,10 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import List
 from sqlalchemy import String, Text, DateTime, ForeignKey, CheckConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+from sqlalchemy.sql import func
 
 
 class Base(DeclarativeBase):
@@ -19,7 +20,7 @@ class User(Base):
     firebase_uid: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
     name: Mapped[str] = mapped_column(Text, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=datetime.now(timezone.utc)
+        DateTime(timezone=True), default=func.now()
     )
 
     study_stacks: Mapped[List["StudyStack"]] = relationship(
@@ -75,13 +76,13 @@ class Topic(Base):
     )
 
     prerequisites: Mapped[List["TopicDependency"]] = relationship(
-        foreign_keys="[TopicDependency.from_topic_id]",
-        back_populates="from_topic",
+        foreign_keys="[TopicDependency.to_topic_id]",
+        back_populates="to_topic",
         cascade="all, delete-orphan",
     )
     dependents: Mapped[List["TopicDependency"]] = relationship(
-        foreign_keys="[TopicDependency.to_topic_id]",
-        back_populates="to_topic",
+        foreign_keys="[TopicDependency.from_topic_id]",
+        back_populates="from_topic",
         cascade="all, delete-orphan",
     )
     questions: Mapped[List["Question"]] = relationship(
@@ -102,7 +103,7 @@ class FlashcardReview(Base):
         index=True,
     )
     timestamp: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=datetime.now(timezone.utc)
+        DateTime(timezone=True), default=func.now()
     )
     grade: Mapped[int] = mapped_column(nullable=False)
     latency_ms: Mapped[int] = mapped_column(nullable=True)
@@ -181,10 +182,10 @@ class TopicDependency(Base):
     )
 
     from_topic: Mapped["Topic"] = relationship(
-        foreign_keys=[from_topic_id], back_populates="prerequisites"
+        foreign_keys=[from_topic_id], back_populates="dependents"
     )
     to_topic: Mapped["Topic"] = relationship(
-        foreign_keys=[to_topic_id], back_populates="dependents"
+        foreign_keys=[to_topic_id], back_populates="prerequisites"
     )
 
 
@@ -202,7 +203,7 @@ class Exam(Base):
     )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=datetime.now(timezone.utc)
+        DateTime(timezone=True), default=func.now()
     )
 
     stack: Mapped["StudyStack"] = relationship(back_populates="exams")
@@ -265,7 +266,7 @@ class ExamAttempt(Base):
         index=True,
     )
     completed_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), default=datetime.now(timezone.utc)
+        DateTime(timezone=True), default=func.now()
     )
     scored_questions: Mapped[int | None] = mapped_column(nullable=True)
     score: Mapped[int | None] = mapped_column(nullable=True)
@@ -319,12 +320,12 @@ class ChatSession(Base):
     )
     title: Mapped[str] = mapped_column(String(255), nullable=False, default="New Chat")
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=datetime.now(timezone.utc)
+        DateTime(timezone=True), default=func.now()
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
-        default=datetime.now(timezone.utc),
-        onupdate=datetime.now(timezone.utc),
+        default=func.now(),
+        onupdate=func.now(),
     )
 
     stack: Mapped["StudyStack"] = relationship(back_populates="chat_sessions")
@@ -360,7 +361,7 @@ class ChatMessage(Base):
     )
     content: Mapped[str] = mapped_column(Text, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=datetime.now(timezone.utc)
+        DateTime(timezone=True), default=func.now()
     )
 
     chat_session: Mapped["ChatSession"] = relationship(back_populates="messages")
@@ -388,7 +389,7 @@ class ChatAttachment(Base):
     )
     ref_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=datetime.now(timezone.utc)
+        DateTime(timezone=True), default=func.now()
     )
 
     chat_session: Mapped["ChatSession"] = relationship(back_populates="attachments")

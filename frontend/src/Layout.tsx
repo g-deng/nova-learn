@@ -12,7 +12,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
-  SidebarTrigger,
+  // SidebarTrigger,
   useSidebar
 } from "./components/ui/sidebar";
 
@@ -60,7 +60,7 @@ export default function Layout() {
         <AppSidebar />
         <div className="flex flex-col flex-1">
           <header className="flex-none bg-white shadow px-4 py-2 flex items-center justify-between">
-            <SidebarTrigger />
+            {/* <SidebarTrigger /> */}<div></div>
             <h1 className="text-xl font-bold">Nova Learn</h1>
             <Button variant="outline" onClick={logout}>
               Log out

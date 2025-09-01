@@ -34,11 +34,9 @@ function App() {
               <Route index element={<Navigate to="flashcards" replace />} />
               <Route path="*" element={<Navigate to="flashcards" replace />} />
               <Route path="flashcards" element={<FlashcardPage />} />
-              {/* <Route path="chat" element={<ChatPage />} /> */}
               <Route path="exams" element={<ExamListPage />} />
               <Route path="exams/:examId" element={<ExamInfoPage />} />
               <Route path="exams/:examId/take" element={<ExamPage />} />
-              {/* <Route path="stats" element={<StatisticsPage />} /> */}
             </Route>
             <Route path=":stackId/edit-topics" element={<AddTopicsPage />} />
             <Route
