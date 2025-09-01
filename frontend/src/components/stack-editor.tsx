@@ -191,10 +191,12 @@ function TopicCard({
   onDelete: () => void;
 }) {
   const togglePrereq = (id: string) => {
-    const current = new Set(topic.prerequisites.map((p) => p.from_topic_id));
-    if (current.has(id)) current.delete(id);
-    else current.add(id);
-    onChange("prerequisites", Array.from(current));
+    console.log(id);
+    const current = topic.prerequisites;
+    const index = topic.prerequisites.findIndex((p) => p.from_topic_id == id);
+    if (index != -1) current.splice(index);
+    else current.push({from_topic_id: id, to_topic_id: topic.id!});
+    onChange("prerequisites", current);
   };
 
   return (
@@ -220,6 +222,7 @@ function TopicCard({
           {topic.prerequisites.length > 0 && (
             <div className="flex flex-wrap gap-2 h-full">
               {topic.prerequisites.map((p) => (
+                p && 
                 <Badge
                   className="h-6"
                   key={`${p.from_topic_id}-${p.to_topic_id}`}

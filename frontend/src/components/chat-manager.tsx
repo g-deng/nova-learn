@@ -84,6 +84,7 @@ export default function ChatManager({ layout }: { layout: string }) {
         </Badge>
       );
     } else if (a.type === "flashcard") {
+      console.log(a.id);
       return (
         <Badge
           key={a.id}
