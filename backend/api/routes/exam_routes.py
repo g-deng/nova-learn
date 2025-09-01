@@ -89,6 +89,14 @@ async def list_exams(
     return exams
 
 
+@router.get("/stack/{stack_id}/questions", response_model=List[QuestionSchema])
+async def get_stack_questions(
+    stack_id: uuid.UUID, user=Depends(get_current_user), db: Session = Depends(get_db)
+):
+    questions = crud.get_questions_by_stack(db, stack_id, user.id)
+    return questions
+
+
 @router.get("/{exam_id}/questions", response_model=List[QuestionSchema])
 async def get_exam_questions(
     exam_id: uuid.UUID, user=Depends(get_current_user), db: Session = Depends(get_db)

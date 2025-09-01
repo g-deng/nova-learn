@@ -1,5 +1,6 @@
 // ExamInfoPage.tsx
 import api from "@/lib/api";
+import { DiscussionButton } from "@/components/chat-manager";
 import DeletionDialog from "@/components/deletion-dialog";
 import { useEffect, useState } from "react";
 import {
@@ -80,7 +81,7 @@ export default function ExamInfoPage() {
   const [updatedCtr, setUpdatedCtr] = useState(0);
   const navigate = useNavigate();
 
-  const stackId = useOutletContext<string>();
+  const { stackId } = useOutletContext<{ stackId: string }>();
   const { examId } = useParams<{ examId: string }>();
   const attemptId = useLocation().hash.slice(1);
 
@@ -350,6 +351,11 @@ function QuestionCard({
   index: number;
   revealAll: boolean;
 }) {
+  const { stackId, setLayout } = useOutletContext<{
+    stackId: string;
+    setLayout: (func: (layout: string) => void) => void;
+  }>();
+
   const [reveal, setReveal] = useState(revealAll);
   useEffect(() => {
     setReveal(revealAll);
@@ -366,6 +372,12 @@ function QuestionCard({
             <span className="text-sm">Reveal</span>
             <Switch checked={reveal} onCheckedChange={setReveal} />
           </div>
+          <DiscussionButton
+            stackId={stackId}
+            type="exam_question"
+            refId={question.id}
+            setLayout={setLayout}
+          />
         </div>
         <div className="space-y-1">
           {[
@@ -409,6 +421,10 @@ function ReviewQuestionCard({
   const [reveal, setReveal] = useState(revealAll);
   const [giveCredit, setGiveCredit] = useState(questionAttempt.manualCredit);
   const [unscored, setUnscored] = useState(!questionAttempt.scored);
+  const { stackId, setLayout } = useOutletContext<{
+    stackId: string;
+    setLayout: (func: (layout: string) => void) => void;
+  }>();
   useEffect(() => {
     if (unscored) {
       setGiveCredit(false);
@@ -506,6 +522,12 @@ function ReviewQuestionCard({
               <Switch checked={unscored} onCheckedChange={setUnscored} />
             </div>
           </div>
+          <DiscussionButton
+            stackId={stackId}
+            type="exam_question"
+            refId={question.id}
+            setLayout={setLayout}
+          />
         </div>
 
         <div className="space-y-1">

@@ -36,8 +36,7 @@ export default function ExamListPage() {
   const [topicFilter, setTopicFilter] = useState<string[]>([]);
   const [loadingExams, setLoadingExams] = useState(false);
   const [openCreator, setOpenCreator] = useState(false);
-  const stackId = useOutletContext<string>();
-
+  const { stackId } = useOutletContext<{ stackId: string }>();
   useEffect(() => {
     setFilteredExams(
       exams.filter((exam) => {
@@ -176,7 +175,7 @@ function ExamCreator({
   const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
   const [generating, setGenerating] = useState(false);
   const [topics, setTopics] = useState<string[]>([]);
-  const stackId = useOutletContext<string>();
+  const { stackId } = useOutletContext<{ stackId: string }>();
 
   useEffect(() => {
     const getTopics = async () => {

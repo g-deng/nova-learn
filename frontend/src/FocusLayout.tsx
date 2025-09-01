@@ -12,11 +12,16 @@ import { useEffect, useState } from "react";
 import GraphViewer from "@/components/graph-viewer";
 import ChatManager from "@/components/chat-manager";
 
+type Pane = "graph" | "chat" | "chat0" | "chat1" | "list" | "manage";
+
 export default function FocusLayout() {
   const [topics, setTopics] = useState<Node[]>([]);
   const [dependencies, setDependencies] = useState<Link[]>([]);
+  const [layout, setLayout] = useState<Pane>("graph");
   const stackId = useOutletContext<string>();
   const navigate = useNavigate();
+
+  console.log(layout);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -46,8 +51,18 @@ export default function FocusLayout() {
 
   return (
     <ResizablePanelGroup direction="horizontal" className="w-full h-full pt-4">
+      <ResizablePanel>
+        <div className="min-h-0 h-full w-full overflow-hidden">
+          <Outlet context={{ stackId, setLayout }} />
+        </div>
+      </ResizablePanel>
+      <ResizableHandle />
       <ResizablePanel className="pl-4 w-full h-full overflow-hidden">
-        <Tabs defaultValue="graph" className="w-full h-full">
+        <Tabs
+          value={layout === "chat0" || layout === "chat1" ? "chat" : layout}
+          onValueChange={(val) => setLayout(val as Pane)}
+          className="w-full h-full"
+        >
           <TabsList>
             <TabsTrigger value="graph">Graph View</TabsTrigger>
             <TabsTrigger value="list">List View</TabsTrigger>
@@ -81,15 +96,9 @@ export default function FocusLayout() {
             </div>
           </TabsContent>
           <TabsContent value="chat" className="w-full h-full min-h-0">
-            <ChatManager />
+            <ChatManager layout={layout} />
           </TabsContent>
         </Tabs>
-      </ResizablePanel>
-      <ResizableHandle />
-      <ResizablePanel>
-        <div className="min-h-0 h-full w-full overflow-hidden">
-          <Outlet context={useOutletContext<string>()} />
-        </div>
       </ResizablePanel>
     </ResizablePanelGroup>
   );

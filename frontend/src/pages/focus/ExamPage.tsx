@@ -33,7 +33,7 @@ export default function ExamPage() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const navigate = useNavigate();
   const { examId } = useParams<{ examId: string }>();
-  const stackId = useOutletContext<string>();
+  const { stackId } = useOutletContext<{ stackId: string }>();
 
   useEffect(() => {
     const fetchExamInfo = async () => {

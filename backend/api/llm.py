@@ -290,7 +290,7 @@ async def chat_with_context(
         raise
 
 
-async def generate_chat_title(messages: list[dict]) -> str:
+async def generate_chat_title(messages: list[dict], attachments: list[dict]) -> str:
     headers = {"Authorization": f"Bearer {OPENROUTER_API_KEY}"}
     payload = {
         "model": model,
@@ -298,17 +298,33 @@ async def generate_chat_title(messages: list[dict]) -> str:
             {
                 "role": "system",
                 "content": (
-                    "You are to generate a short, descriptive title (3-6 words) "
+                    "The user has attached the following context. "
+                    + "\n".join(
+                        [
+                            f"{a['type'].replace('_', ' ').title()}: {a['text']}"
+                            for a in attachments
+                        ]
+                    )
+                ),
+            },
+            {
+                "role": "system",
+                "content": (
+                    "You are to generate a short, descriptive title (maximum 6 words) "
                     "for the following chat. Return only the title, no quotes, no punctuation."
                 ),
             },
-            {"role": "user", "content": "\n".join([m["content"] for m in messages[:3]])},
+            {
+                "role": "user",
+                "content": "\n".join([m["content"] for m in messages[:3]]),
+            },
         ],
         "temperature": 0.5,
     }
     async with httpx.AsyncClient() as client:
         response = await client.post(
-            "https://openrouter.ai/api/v1/chat/completions", json=payload, headers=headers
+            "https://openrouter.ai/api/v1/chat/completions",
+            json=payload,
+            headers=headers,
         )
     return response.json()["choices"][0]["message"]["content"].strip()
-

@@ -522,6 +522,16 @@ def get_question_by_id(db: Session, question_id: uuid.UUID, user_id: uuid.UUID):
     return question
 
 
+def get_questions_by_stack(db: Session, stack_id: uuid.UUID, user_id: uuid.UUID):
+    get_stack_by_id(db, stack_id, user_id)
+    return (
+        db.query(Question)
+        .join(Exam, Exam.id == Question.exam_id)
+        .filter(Exam.stack_id == stack_id)
+        .all()
+    )
+
+
 def update_question(
     db: Session,
     question_id: uuid.UUID,
@@ -702,7 +712,12 @@ def list_chat_sessions(
     db: Session, stack_id: uuid.UUID, user_id: uuid.UUID
 ) -> list[ChatSession]:
     get_stack_by_id(db, stack_id, user_id)
-    return db.query(ChatSession).filter(ChatSession.stack_id == stack_id).all()
+    return (
+        db.query(ChatSession)
+        .filter(ChatSession.stack_id == stack_id)
+        .order_by(ChatSession.created_at.desc())
+        .all()
+    )
 
 
 def delete_chat_session(db: Session, chat_id: uuid.UUID, user_id: uuid.UUID) -> None:
@@ -726,11 +741,28 @@ def add_attachment_to_chat(
     db: Session, chat_id: uuid.UUID, user_id: uuid.UUID, type: str, ref_id: uuid.UUID
 ) -> ChatAttachment:
     chat = get_chat_by_id(db, chat_id, user_id)
+
+    attachment = next((att for att in chat.attachments if att.ref_id == ref_id), None)
+    if attachment:
+        return attachment
+
     attachment = ChatAttachment(chat_id=chat.id, type=type, ref_id=ref_id)
     db.add(attachment)
     db.commit()
     db.refresh(attachment)
     return attachment
+
+
+def remove_attachment_from_chat(
+    db: Session, chat_id: uuid.UUID, user_id: uuid.UUID, attachment_id: uuid.UUID
+) -> None:
+    chat = get_chat_by_id(db, chat_id, user_id)
+    attachment = next(
+        (att for att in chat.attachments if att.id == attachment_id), None
+    )
+    if attachment:
+        db.delete(attachment)
+        db.commit()
 
 
 def add_tag_to_chat(

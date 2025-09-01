@@ -45,6 +45,7 @@ import { Toggle } from "@/components/ui/toggle";
 import api from "@/lib/api";
 import TopicFilter from "@/components/topic-filter";
 import { Textarea } from "@/components/ui/textarea";
+import { DiscussionButton } from "@/components/chat-manager";
 
 type Flashcard = {
   id: string;
@@ -56,7 +57,7 @@ type Flashcard = {
 };
 
 export default function FlashcardPage() {
-  const stackId = useOutletContext<string>();
+  const { stackId } = useOutletContext<{ stackId: string }>();
   const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
   const [topicFilter, setTopicFilter] = useState<string[]>([]);
   const [mode, setMode] = useState<"learn" | "free" | "missed">("free");
@@ -323,7 +324,10 @@ function LearnViewer({ topicFilter }: { topicFilter: string[] }) {
 
   const [flipped, setFlipped] = useState(false);
   const [cards, setCards] = useState<Flashcard[]>([]);
-  const stackId = useOutletContext<string>();
+  const { stackId, setLayout } = useOutletContext<{
+    stackId: string;
+    setLayout: (func: (layout: string) => void) => void;
+  }>();
 
   useEffect(() => {
     console.log("ready to learn");
@@ -404,22 +408,29 @@ function LearnViewer({ topicFilter }: { topicFilter: string[] }) {
                           {card.topicName || "Unknown Topic"}
                         </Badge>
                         {card.back}
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <Button
-                              variant="outline"
-                              className="rounded-full"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <Sparkles className="w-4 h-4" />
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-72">
-                            <p className="text-sm">
-                              {card.explanation || "No explanation provided."}
-                            </p>
-                          </PopoverContent>
-                        </Popover>
+                        <div onClick={(e) => e.stopPropagation()}>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                className="rounded-full w-8 h-8"
+                              >
+                                <Sparkles className="w-4 h-4" />
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-72">
+                              <p className="text-sm">
+                                {card.explanation || "No explanation provided."}
+                              </p>
+                            </PopoverContent>
+                          </Popover>
+                          <DiscussionButton
+                            stackId={stackId}
+                            type="flashcard"
+                            refId={card.id}
+                            setLayout={setLayout}
+                          />
+                        </div>
                       </CardContent>
                     )}
                   </Card>
@@ -505,7 +516,7 @@ function LearnViewer({ topicFilter }: { topicFilter: string[] }) {
 
 function MissedViewer({ topicFilter }: { topicFilter: string[] }) {
   const [cards, setCards] = useState<Flashcard[]>([]);
-  const stackId = useOutletContext<string>();
+  const { stackId } = useOutletContext<{ stackId: string }>();
 
   useEffect(() => {
     const fetchCards = async () => {
@@ -555,6 +566,10 @@ function CardViewer({ cards }: { cards: Flashcard[] }) {
   const [carouselApi, setCarouselApi] = useState<CarouselApi | null>(null);
   const [curr, setCurr] = useState(0);
   const [deletedCards, setDeletedCards] = useState<Set<string>>(new Set());
+  const { stackId, setLayout } = useOutletContext<{
+    stackId: string;
+    setLayout: (func: (layout: string) => void) => void;
+  }>();
 
   useEffect(() => {
     carouselApi?.scrollTo(0);
@@ -694,22 +709,30 @@ function CardViewer({ cards }: { cards: Flashcard[] }) {
                       </div>
                     </div>
                     {card.back}
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className="w-8 h-8 rounded-full"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <Sparkles className="w-4 h-4" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-72">
-                        <p className="text-sm">
-                          {card.explanation || "No explanation provided."}
-                        </p>
-                      </PopoverContent>
-                    </Popover>
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className="w-8 h-8 rounded-full"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <Sparkles className="w-4 h-4" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-72">
+                          <p className="text-sm">
+                            {card.explanation || "No explanation provided."}
+                          </p>
+                        </PopoverContent>
+                      </Popover>
+                      <DiscussionButton
+                        stackId={stackId}
+                        type="flashcard"
+                        refId={card.id}
+                        setLayout={setLayout}
+                      />
+                    </div>
                   </CardContent>
                 )}
               </Card>

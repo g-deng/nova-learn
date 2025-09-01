@@ -27,7 +27,7 @@ export default function TopicFilter({
 }) {
   const [open, setOpen] = useState(false);
   const [topics, setTopics] = useState<string[]>([]);
-  const stackId = useOutletContext<string>();
+  const { stackId } = useOutletContext<{ stackId: string }>();
 
   useEffect(() => {
     const getTopics = async () => {
