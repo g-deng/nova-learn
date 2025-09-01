@@ -152,7 +152,7 @@ function ExamLine({ id, name, topics, createdAt, bestAttempt }: ExamInfo) {
             Take Exam
           </Button>
         </div>
-        {bestAttempt?.score && (
+        {bestAttempt && bestAttempt.scoredQuestions && (
           <Badge>
             Best: {bestAttempt.score} / {bestAttempt.scoredQuestions}
           </Badge>
