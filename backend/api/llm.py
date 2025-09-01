@@ -126,7 +126,7 @@ async def extract_flashcards(
         "Format your output as a JSON array of objects with 'front', 'back', and 'explanation' fields. "
         "Do not include any extra text outside the JSON array.\n"
         f"{avoid_text}"
-        f"{f'Consider the following instructions if relevant: {prompt}' if prompt else ''}"
+        f"{f'Consider the following context if relevant but disregard if it is unrelated to the topic: {prompt}' if prompt else ''}"
     )
     headers = {
         "Authorization": f"Bearer {OPENROUTER_API_KEY}",
@@ -191,6 +191,7 @@ async def create_multiple_choice_exam(
         "Each question should have 4 answer choices labeled 'A', 'B', 'C', and 'D', with one correct answer. "
         "Format your output as a JSON array of objects with 'text', 'choices' (a dict of options keyed by letter), 'topic_name' (the name of the topic), and 'answer' (the correct option letter). "
         "Do not include any extra text outside the JSON array."
+        f"{f'Consider the following context if relevant but disregard if it is unrelated to the topic: {prompt}' if prompt else ''}"
     )
 
     headers = {

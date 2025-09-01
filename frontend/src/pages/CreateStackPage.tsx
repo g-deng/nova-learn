@@ -14,7 +14,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import axios from "axios";
+import api from "@/lib/api";
 import { useNavigate } from "react-router-dom";
 
 const formSchema = z.object({
@@ -42,24 +42,24 @@ export default function CreateStackPage() {
       return;
     }
     console.log(token);
-    const res = await axios.post(
-      import.meta.env.VITE_BACKEND_URL + "/stacks/add_stack",
-      {
-        name: values.title,
-        description: values.description
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${token}`
+    try {
+      const res = await api.post(
+        "/stacks/add_stack",
+        {
+          name: values.title,
+          description: values.description + "\n\n User's Goals: " + values.notes
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
         }
-      }
-    );
-    if (res.status === 200) {
+      );
       console.log("Stack created successfully");
       navigate(`/stack/${res.data.id}/edit-topics`, {
         state: { description: values.description }
       });
-    } else {
+    } catch (error) {
       console.error("Failed to create stack");
     }
   }
@@ -100,9 +100,7 @@ export default function CreateStackPage() {
                       {...field}
                     />
                   </FormControl>
-                  <FormDescription>
-                    Describe your study stack, just for you.
-                  </FormDescription>
+                  <FormDescription>Describe your study stack.</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -115,15 +113,12 @@ export default function CreateStackPage() {
                   <FormLabel>Study goals and notes</FormLabel>
                   <FormControl>
                     <Textarea
-                      disabled
                       className="resize-none"
                       placeholder="I want to focus on..."
                       {...field}
                     />
                   </FormControl>
-                  <FormDescription>
-                    Tell Nova what you want to learn.
-                  </FormDescription>
+                  <FormDescription>What do you want to learn?</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -135,15 +130,28 @@ export default function CreateStackPage() {
                 <FormItem>
                   <FormLabel>Attachments</FormLabel>
                   <FormControl>
-                    <Input disabled placeholder="Syllabus" {...field} />
+                    <Input
+                      type="file"
+                      accept=".pdf,.docx,.txt"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          field.onChange(file.name);
+                        }
+                      }}
+                    />
                   </FormControl>
-                  <FormDescription>
-                    Attach relevant resources here.
-                  </FormDescription>
+                  {field.value && (
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Selected: {field.value}
+                    </p>
+                  )}
+                  <FormDescription>Attach a syllabus or notes.</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
+
             <Button type="submit">Submit</Button>
           </form>
         </Form>

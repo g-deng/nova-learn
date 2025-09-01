@@ -1,4 +1,3 @@
-import time
 from fastapi import Depends, HTTPException, status, Request
 import firebase_admin
 from firebase_admin import auth, credentials
@@ -34,14 +33,13 @@ async def get_current_user(request: Request, db: Session = Depends(get_db)):
         # print("user found:", user)
         if not user:
             user = crud.create_user(db, uid, decoded_token.get("name", ""))
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found"
+            )
         return user
     except Exception as e:
-        if "Token used too early" in str(e):
-            print("DELAY FOR CLOCK SKEW")
-            time.sleep(1)
-            decoded_token = auth.verify_id_token(id_token)
-        else:
-            print(e)
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
-            )
+        print("Error verifying token:", e)
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
+        )

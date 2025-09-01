@@ -15,25 +15,6 @@ from fastapi import Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
-
-class SubmitTopicListRequest(BaseModel):
-    stack_id: uuid.UUID
-    new_topics: dict[str, str]  # {name: description}
-    old_topics: dict[uuid.UUID, tuple[str, str]]  # {id: (name, description)}
-    deleted_topics: List[uuid.UUID]
-
-
-class SubmitDependenciesRequest(BaseModel):
-    new_dependencies: List[tuple[str, str]]  # list of [from, to]
-    old_dependencies: dict[str, List[str]]  # {id: [from, to]}
-    deleted_dependencies: List[str]  # list of ids
-
-
-class CreateStackRequest(BaseModel):
-    name: str
-    description: str
-
-
 router = APIRouter(prefix="/stacks")
 
 
@@ -62,6 +43,13 @@ async def generate_topics(
         return topics["topics"]
     else:
         raise HTTPException(status_code=500, detail="Failed to extract topics")
+
+
+class SubmitTopicListRequest(BaseModel):
+    stack_id: uuid.UUID
+    new_topics: dict[str, str]  # {name: description}
+    old_topics: dict[uuid.UUID, tuple[str, str]]  # {id: (name, description)}
+    deleted_topics: List[uuid.UUID]
 
 
 @router.post("/{stack_id}/submit_topic_list", response_model=dict[str, uuid.UUID])
@@ -103,6 +91,12 @@ async def infer_dependencies(
         raise HTTPException(
             status_code=500, detail="Failed to infer topic dependencies"
         )
+
+
+class SubmitDependenciesRequest(BaseModel):
+    new_dependencies: List[tuple[str, str]]  # list of [from, to]
+    old_dependencies: dict[str, List[str]]  # {id: [from, to]}
+    deleted_dependencies: List[str]  # list of ids
 
 
 @router.post(
@@ -159,6 +153,11 @@ async def submit_dependencies(
             print(f"Error deleting dependency: {e}")
 
     return new_ids
+
+
+class CreateStackRequest(BaseModel):
+    name: str
+    description: str
 
 
 @router.post("/add_stack", response_model=StudyStackSchema)
