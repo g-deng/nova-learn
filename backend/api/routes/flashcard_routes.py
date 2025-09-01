@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from datetime import datetime, timezone
 
-router = APIRouter(prefix="/flashcards")
+router = APIRouter(prefix="/flashcards", tags=["flashcards"])
 
 
 @router.post("/{topic_id}/generate", response_model=List[FlashcardSchema])

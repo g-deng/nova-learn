@@ -16,7 +16,7 @@ from fastapi import Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
-router = APIRouter(prefix="/stacks")
+router = APIRouter(prefix="/stacks", tags=["stacks"])
 
 
 @router.get("", response_model=List[StudyStackSchema])

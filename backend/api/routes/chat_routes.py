@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from api import llm
 
-router = APIRouter(prefix="/chats")
+router = APIRouter(prefix="/chats", tags=["chats"])
 
 
 @router.post("/stacks/{stack_id}/create", response_model=ChatSessionSchema)

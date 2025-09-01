@@ -3,3 +3,4 @@
 venv
 *serviceAccountKey.json
 *__pycache__/
+schema.sql

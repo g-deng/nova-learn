@@ -16,7 +16,7 @@ from fastapi import Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
-router = APIRouter(prefix="/exams")
+router = APIRouter(prefix="/exams", tags=["exams"])
 
 
 class CreateExamRequest(BaseModel):
