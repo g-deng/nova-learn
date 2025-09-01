@@ -56,7 +56,7 @@ export function LoginForm({
       }, 2000);
     } catch (err) {
       console.error(err);
-      
+
       setLoading(false);
     }
   };
@@ -113,7 +113,8 @@ export function LoginForm({
                   onClick={handleGoogleLogin}
                   className="w-full"
                 >
-                  {loading && <Loader2 className="animate-spin mr-2" />} Login with Google
+                  {loading && <Loader2 className="animate-spin mr-2" />} Login
+                  with Google
                 </Button>
               </div>
             </div>

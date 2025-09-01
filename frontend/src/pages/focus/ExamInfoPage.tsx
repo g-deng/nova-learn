@@ -97,10 +97,10 @@ export default function ExamInfoPage() {
           topics: response.data.topics,
           bestAttempt: response.data.best_attempt
             ? {
-              id: response.data.best_attempt.id,
-              score: response.data.best_attempt.score,
-              scoredQuestions: response.data.best_attempt.scored_questions
-            }
+                id: response.data.best_attempt.id,
+                score: response.data.best_attempt.score,
+                scoredQuestions: response.data.best_attempt.scored_questions
+              }
             : null
         });
         const responseAttempts = await api.get(`/exams/${examId}/attempts`);
@@ -390,10 +390,11 @@ function QuestionCard({
           ].map(([val, label]) => (
             <div
               key={val}
-              className={`p-2 rounded ${reveal && val === question.answer
+              className={`p-2 rounded ${
+                reveal && val === question.answer
                   ? "bg-green-200 dark:bg-green-800"
                   : "bg-muted"
-                }`}
+              }`}
             >
               {val}. {label}
             </div>

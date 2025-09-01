@@ -1,6 +1,11 @@
 import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardDescription,
+  CardHeader,
+  CardTitle
+} from "@/components/ui/card";
 import {
   Command,
   CommandInput,
@@ -157,7 +162,11 @@ export default function ChatManager({ layout }: { layout: string }) {
     try {
       setCreationLoading(true);
       const response = await api.post(`/chats/stacks/${stackId}/create`);
-      const newChat = { ...response.data, created_at: new Date(response.data.created_at), updated_at: new Date(response.data.updated_at) };
+      const newChat = {
+        ...response.data,
+        created_at: new Date(response.data.created_at),
+        updated_at: new Date(response.data.updated_at)
+      };
       setChats((prev) => [newChat, ...prev]);
       setActiveChatId(newChat.id);
     } catch (error) {
@@ -296,12 +305,12 @@ export default function ChatManager({ layout }: { layout: string }) {
               >
                 <CardHeader className="flex flex-row items-center justify-between p-2">
                   <div className="flex flex-col">
-                  <CardTitle className="text-sm font-medium wrap">
-                    {chat.title}
-                  </CardTitle>
-                  <CardDescription className="flex flex-col text-xs">
-                    {chat.updated_at.toLocaleString()}
-                  </CardDescription>
+                    <CardTitle className="text-sm font-medium wrap">
+                      {chat.title}
+                    </CardTitle>
+                    <CardDescription className="flex flex-col text-xs">
+                      {chat.updated_at.toLocaleString()}
+                    </CardDescription>
                   </div>
                   <Button
                     size="icon"

@@ -37,13 +37,10 @@ export default function CreateStackPage() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     console.log(values);
     try {
-      const res = await api.post(
-        "/stacks/add_stack",
-        {
-          name: values.title,
-          description: values.description
-        }
-      );
+      const res = await api.post("/stacks/add_stack", {
+        name: values.title,
+        description: values.description
+      });
       console.log("Stack created successfully");
       navigate(`/stack/${res.data.id}`, {
         state: { description: values.description }
@@ -142,11 +139,18 @@ export default function CreateStackPage() {
             />
             <div className="flex flex-col gap-2">
               <Button type="submit">Submit</Button>
-              <Button variant="outline" onClick={(e) => { e.stopPropagation(); navigate("/stacks"); }}>Cancel</Button>
+              <Button
+                variant="outline"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate("/stacks");
+                }}
+              >
+                Cancel
+              </Button>
             </div>
           </form>
         </Form>
-        
       </Card>
     </div>
   );

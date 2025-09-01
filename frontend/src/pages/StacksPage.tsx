@@ -23,7 +23,10 @@ function Stack({
     navigate(`/stack/${id}`);
   };
   return (
-    <Card onClick={handleClick} className="cursor-pointer hover:bg-muted transition-colors">
+    <Card
+      onClick={handleClick}
+      className="cursor-pointer hover:bg-muted transition-colors"
+    >
       <CardHeader>
         <CardTitle>{name}</CardTitle>
         <CardDescription>{description}</CardDescription>
@@ -60,7 +63,7 @@ export default function StacksPage() {
         <h1 className="text-3xl font-bold mb-6">
           {(() => {
             const hour = new Date().getHours();
-            if (hour < 5) return "Good evening~"
+            if (hour < 5) return "Good evening~";
             if (hour < 12) return "Good morning~";
             if (hour < 18) return "Good afternoon~";
             return "Good evening!";

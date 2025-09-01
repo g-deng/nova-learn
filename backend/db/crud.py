@@ -69,7 +69,11 @@ def get_topics_by_stack_id(db: Session, stack_id: uuid.UUID, user_id: uuid.UUID)
 
 
 def create_topic(
-    db: Session, stack_id: uuid.UUID, name: str, description: str | None, user_id: uuid.UUID
+    db: Session,
+    stack_id: uuid.UUID,
+    name: str,
+    description: str | None,
+    user_id: uuid.UUID,
 ):
     get_stack_by_id(db, stack_id, user_id)
     topic = Topic(stack_id=stack_id, name=name, description=description)
@@ -94,15 +98,19 @@ def get_topic_by_name(db: Session, topic_name: str, user_id: uuid.UUID):
     get_stack_by_id(db, topic.stack_id, user_id)
     return topic
 
-def get_topics_with_prerequisites_by_stack_id(db: Session, stack_id: uuid.UUID, user_id: uuid.UUID):
+
+def get_topics_with_prerequisites_by_stack_id(
+    db: Session, stack_id: uuid.UUID, user_id: uuid.UUID
+):
     get_stack_by_id(db, stack_id, user_id)
     print("trying")
     return (
         db.query(Topic)
         .filter(Topic.stack_id == stack_id)
-        .options(selectinload(Topic.prerequisites)) 
+        .options(selectinload(Topic.prerequisites))
         .all()
     )
+
 
 def update_topic(
     db: Session,

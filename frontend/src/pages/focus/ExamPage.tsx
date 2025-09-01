@@ -64,7 +64,6 @@ export default function ExamPage() {
           <ChevronLeft className="w-4 h-4" />
         </Button>
         <h2 className="text-lg font-medium"> {examName}</h2>
-        
       </div>
       <div className="h-full w-full min-h-0">
         {loadingQuestions ? (
@@ -134,67 +133,67 @@ function ExamForm({ questions, examId, stackId }: ExamFormProps) {
 
   return (
     <div className="h-full w-full flex flex-col min-h-0">
-    <ScrollArea className="min-h-0 mx-auto">
-      <Form {...form}>
-        <form
-          onSubmit={form.handleSubmit(onSubmit)}
-          className="space-y-6 min-h-0"
-        >
-          {questions.map((q, idx) => (
-            <Card key={q.id} className="shadow-md rounded-xl py-2">
-              <CardContent className="p-6">
-                <FormField
-                  control={form.control}
-                  name={q.id}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="font-medium text-lg">
-                        {idx + 1}. {q.text}
-                      </FormLabel>
-                      <FormControl>
-                        <RadioGroup
-                          onValueChange={field.onChange}
-                          value={field.value}
-                          className="space-y-2 relative"
-                        >
-                          {[
-                            ["A", q.option_a],
-                            ["B", q.option_b],
-                            ["C", q.option_c],
-                            ["D", q.option_d]
-                          ].map(([val, label]) => (
-                            <div
-                              key={val}
-                              className="flex items-center space-x-2"
-                            >
-                              <RadioGroupItem
-                                value={val}
-                                id={`${q.id}-${val}`}
-                              />
-                              <label
-                                htmlFor={`${q.id}-${val}`}
-                                className="text-sm"
+      <ScrollArea className="min-h-0 mx-auto">
+        <Form {...form}>
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="space-y-6 min-h-0"
+          >
+            {questions.map((q, idx) => (
+              <Card key={q.id} className="shadow-md rounded-xl py-2">
+                <CardContent className="p-6">
+                  <FormField
+                    control={form.control}
+                    name={q.id}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="font-medium text-lg">
+                          {idx + 1}. {q.text}
+                        </FormLabel>
+                        <FormControl>
+                          <RadioGroup
+                            onValueChange={field.onChange}
+                            value={field.value}
+                            className="space-y-2 relative"
+                          >
+                            {[
+                              ["A", q.option_a],
+                              ["B", q.option_b],
+                              ["C", q.option_c],
+                              ["D", q.option_d]
+                            ].map(([val, label]) => (
+                              <div
+                                key={val}
+                                className="flex items-center space-x-2"
                               >
-                                {label}
-                              </label>
-                            </div>
-                          ))}
-                        </RadioGroup>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </CardContent>
-            </Card>
-          ))}
+                                <RadioGroupItem
+                                  value={val}
+                                  id={`${q.id}-${val}`}
+                                />
+                                <label
+                                  htmlFor={`${q.id}-${val}`}
+                                  className="text-sm"
+                                >
+                                  {label}
+                                </label>
+                              </div>
+                            ))}
+                          </RadioGroup>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </CardContent>
+              </Card>
+            ))}
 
-          <Button type="submit" className="w-full">
-            {loading && <Loader2 className="mr-2 animate-spin" />} Submit Exam
-          </Button>
-        </form>
-      </Form>
-    </ScrollArea>
+            <Button type="submit" className="w-full">
+              {loading && <Loader2 className="mr-2 animate-spin" />} Submit Exam
+            </Button>
+          </form>
+        </Form>
+      </ScrollArea>
     </div>
   );
 }

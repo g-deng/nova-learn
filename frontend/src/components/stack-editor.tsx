@@ -9,7 +9,7 @@ import { ArrowUpFromDot, Check, Loader2, Sparkles } from "lucide-react";
 import {
   Popover,
   PopoverContent,
-  PopoverTrigger,
+  PopoverTrigger
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,7 +18,7 @@ import {
   CommandEmpty,
   CommandGroup,
   CommandInput,
-  CommandItem,
+  CommandItem
 } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
 import DeletionDialog from "./deletion-dialog";
@@ -26,7 +26,7 @@ import DeletionDialog from "./deletion-dialog";
 type Dependencies = {
   from_topic_id: string;
   to_topic_id: string;
-}
+};
 
 type Topic = {
   id: string | null;
@@ -66,8 +66,8 @@ export default function StackEditor() {
   }, [topics, saved]);
 
   const editTopic = (id: string | null, field: keyof Topic, value: any) => {
-    setTopics(prev =>
-      prev.map(t => t.id === id ? { ...t, [field]: value } : t)
+    setTopics((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, [field]: value } : t))
     );
   };
 
@@ -116,31 +116,59 @@ export default function StackEditor() {
       id: null,
       name: "",
       description: "",
-      prerequisites: [],
+      prerequisites: []
     };
-    setTopics(prev => [...prev, newTopic]);
-  }
+    setTopics((prev) => [...prev, newTopic]);
+  };
 
   return (
     <div className="p-4 flex flex-col gap-4 h-full min-h-0">
       <h1 className="text-2xl font-bold">Manage Topics & Prerequisites</h1>
       <div className="flex gap-2">
-        <Button onClick={generateTopics} disabled={generating || loading || unsavedChanges}>{generating ? <Loader2 className="animate-spin mr-2" /> : <Sparkles />} Generate Topics</Button>
-        <Button onClick={generatePrereqs} disabled={generating || loading || unsavedChanges}>{generating ? <Loader2 className="animate-spin mr-2" /> : <Sparkles />} Generate Prereqs</Button>
-        <Button onClick={saveAll} disabled={!unsavedChanges}>Save Changes</Button>
+        <Button
+          onClick={generateTopics}
+          disabled={generating || loading || unsavedChanges}
+        >
+          {generating ? (
+            <Loader2 className="animate-spin mr-2" />
+          ) : (
+            <Sparkles />
+          )}{" "}
+          Generate Topics
+        </Button>
+        <Button
+          onClick={generatePrereqs}
+          disabled={generating || loading || unsavedChanges}
+        >
+          {generating ? (
+            <Loader2 className="animate-spin mr-2" />
+          ) : (
+            <Sparkles />
+          )}{" "}
+          Generate Prereqs
+        </Button>
+        <Button onClick={saveAll} disabled={!unsavedChanges}>
+          Save Changes
+        </Button>
       </div>
       <div className="flex-1 overflow-y-auto min-h-0 flex flex-col gap-4 shadow-inner">
         {loading && <Skeleton className="h-20 w-full" />}
-        {topics.map(t => (
+        {topics.map((t) => (
           <TopicCard
             key={t.id || t.name}
             topic={t}
             allTopics={topics}
             onChange={(field, val) => editTopic(t.id, field, val)}
-            onDelete={() => {if (t.id) setTopics(prev => prev.filter(topic => topic.id !== t.id)); else setTopics(topics.slice(0, -1))}}
+            onDelete={() => {
+              if (t.id)
+                setTopics((prev) => prev.filter((topic) => topic.id !== t.id));
+              else setTopics(topics.slice(0, -1));
+            }}
           />
         ))}
-        <Button onClick={addTopic} disabled={generating || loading }>Add Topic</Button>
+        <Button onClick={addTopic} disabled={generating || loading}>
+          Add Topic
+        </Button>
         {unsavedChanges && (
           <Alert>
             <AlertTitle>Unsaved changes</AlertTitle>
@@ -151,12 +179,11 @@ export default function StackEditor() {
   );
 }
 
-
 function TopicCard({
   topic,
   allTopics,
   onChange,
-  onDelete,
+  onDelete
 }: {
   topic: Topic;
   allTopics: Topic[];
@@ -164,7 +191,7 @@ function TopicCard({
   onDelete: () => void;
 }) {
   const togglePrereq = (id: string) => {
-    const current = new Set(topic.prerequisites.map(p => p.from_topic_id));
+    const current = new Set(topic.prerequisites.map((p) => p.from_topic_id));
     if (current.has(id)) current.delete(id);
     else current.add(id);
     onChange("prerequisites", Array.from(current));
@@ -184,21 +211,25 @@ function TopicCard({
       <label className="text-sm font-medium">Prerequisites</label>
       <div className="flex gap-2 justify-between items-center">
         <div className="flex gap-2 items-center">
-        <PrereqSelect
-          topic={topic}
-          allTopics={allTopics}
-          togglePrereq={togglePrereq}
-          onChange={onChange}
-        />
-        {topic.prerequisites.length > 0 && (
-          <div className="flex flex-wrap gap-2 h-full">
-            {topic.prerequisites.map((p) => (
-              <Badge className="h-6" key={`${p.from_topic_id}-${p.to_topic_id}`} variant="secondary">
-                {allTopics.find(t => t.id === p.from_topic_id)?.name}
-              </Badge>
-            ))}
-          </div>
-        )}
+          <PrereqSelect
+            topic={topic}
+            allTopics={allTopics}
+            togglePrereq={togglePrereq}
+            onChange={onChange}
+          />
+          {topic.prerequisites.length > 0 && (
+            <div className="flex flex-wrap gap-2 h-full">
+              {topic.prerequisites.map((p) => (
+                <Badge
+                  className="h-6"
+                  key={`${p.from_topic_id}-${p.to_topic_id}`}
+                  variant="secondary"
+                >
+                  {allTopics.find((t) => t.id === p.from_topic_id)?.name}
+                </Badge>
+              ))}
+            </div>
+          )}
         </div>
         <DeletionDialog
           triggerLabel=""
@@ -223,10 +254,8 @@ function PrereqSelect({
   onChange: (field: keyof Topic, value: any) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const prereqIds = new Set(topic.prerequisites.map(p => p.from_topic_id));
-  const selected = allTopics.filter((t) =>
-    prereqIds.has(t.id!)
-  );
+  const prereqIds = new Set(topic.prerequisites.map((p) => p.from_topic_id));
+  const selected = allTopics.filter((t) => prereqIds.has(t.id!));
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -252,9 +281,7 @@ function PrereqSelect({
                   <Check
                     className={cn(
                       "h-4 w-4",
-                      prereqIds.has(t.id!)
-                        ? "opacity-100"
-                        : "opacity-0"
+                      prereqIds.has(t.id!) ? "opacity-100" : "opacity-0"
                     )}
                   />
                   {t.name}

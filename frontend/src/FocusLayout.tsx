@@ -60,7 +60,10 @@ export default function FocusLayout() {
     : "flashcards";
 
   return (
-    <ResizablePanelGroup direction="horizontal" className="w-full h-full pt-4 min-h-0">
+    <ResizablePanelGroup
+      direction="horizontal"
+      className="w-full h-full pt-4 min-h-0"
+    >
       <ResizablePanel className="flex flex-col h-full w-full min-h-0 overflow-hidden">
         <Tabs value={currentTab} onValueChange={(v) => navigate(v)}>
           <TabsList>
@@ -92,7 +95,9 @@ export default function FocusLayout() {
             <GraphViewer
               nodes={topics}
               links={dependencies}
-              onNodeClick={(node) => handleDiscuss(stackId, "topic", node.id, setLayout)}
+              onNodeClick={(node) =>
+                handleDiscuss(stackId, "topic", node.id, setLayout)
+              }
               onLinkClick={() => {}}
             />
           </TabsContent>

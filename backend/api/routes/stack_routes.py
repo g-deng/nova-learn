@@ -196,6 +196,7 @@ async def get_topics(
         print(f"Error fetching topics: {e}")
     raise HTTPException(status_code=404, detail="Stack not found")
 
+
 @router.get("/{stack_id}/topics_with_prereqs", response_model=List[TopicSchema])
 async def get_topics_with_prereqs(
     stack_id: uuid.UUID, user=Depends(get_current_user), db: Session = Depends(get_db)
@@ -210,27 +211,34 @@ async def get_topics_with_prereqs(
 class SubmitNewGraphRequest(BaseModel):
     topics: List[TopicSchema]
 
+
 @router.post("/{stack_id}/submit_topics_with_prereqs", response_model=List[TopicSchema])
 async def submit_topics_with_prereqs(
     stack_id: uuid.UUID,
     body: SubmitNewGraphRequest,
     user=Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     print("Submitting topics with prerequisites")
     for topic in body.topics:
         if topic.id:
-            crud.update_topic(db, topic.id, topic.name, topic.description, stack_id, user.id)
+            crud.update_topic(
+                db, topic.id, topic.name, topic.description, stack_id, user.id
+            )
         else:
             try:
                 crud.create_topic(db, stack_id, topic.name, topic.description, user.id)
             except Exception as e:
                 print(f"Error creating topic: {e}")
 
-        db.query(TopicDependency).filter(TopicDependency.to_topic_id == topic.id).delete()
+        db.query(TopicDependency).filter(
+            TopicDependency.to_topic_id == topic.id
+        ).delete()
         for prereq in topic.prerequisites:
             try:
-                crud.add_topic_dependency(db, prereq.from_topic_id, prereq.to_topic_id, user.id)
+                crud.add_topic_dependency(
+                    db, prereq.from_topic_id, prereq.to_topic_id, user.id
+                )
             except Exception as e:
                 print(f"Error creating topic dependency: {e}")
 

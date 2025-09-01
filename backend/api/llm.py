@@ -4,7 +4,7 @@ import json
 from typing import List
 
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
-model = "openai/gpt-4o-mini"# "anthropic/claude-3-haiku" # "z-ai/glm-4.5-air:free"  # "google/gemini-2.0-flash-exp:free" #  # "openai/gpt-3.5-turbo" "openai/gpt-oss-20b:free"
+model = "openai/gpt-4o-mini"  # "anthropic/claude-3-haiku" # "z-ai/glm-4.5-air:free"  # "google/gemini-2.0-flash-exp:free" #  # "openai/gpt-3.5-turbo" "openai/gpt-oss-20b:free"
 temperature = 0.2
 
 
