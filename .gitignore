@@ -4,3 +4,4 @@ venv
 *serviceAccountKey.json
 *__pycache__/
 schema.sql
+.ruff_cache
